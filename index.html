@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Day of today's colour</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sulphur+Point:wght@300;400;700&family=Noto+Sans+JP:wght@300;400;500&display=swap');
+
+  :root {
+    --happy: #F6CE83;
+    --happy-light: #FBE8C0;
+    --sad: #C06145;
+    --sad-light: #E8B09A;
+    --neutral: #9F9F9F;
+    --neutral-light: #D8D8D8;
+    --empty: #DCE5EF;
+    --bg: #F3EEE8;
+    --paper: #4D586F;
+    --ink: #4D586F;
+    --ink-light: #8E97A8;
+    --border: #3d4759;
+    --btn-bg: #4D586F;
+    --btn-text: #DCE5EF;
+    --card-bg: #FAF6F1;
+    --past-empty: #DCE5EF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Noto Sans JP', 'PingFang TC', 'Apple SD Gothic Neo', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 27px, rgba(77,88,111,0.04) 28px),
+      repeating-linear-gradient(90deg, transparent, transparent 27px, rgba(77,88,111,0.04) 28px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    margin-bottom: 36px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 1px solid rgba(77,88,111,0.2);
+    padding-bottom: 20px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  h1 {
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+
+  .subtitle {
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 11px;
+    color: var(--ink-light);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .legend {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 12px;
+    color: var(--ink-light);
+    letter-spacing: 0.06em;
+  }
+
+  .legend-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .view-tabs {
+    display: flex;
+    gap: 2px;
+    margin-bottom: 24px;
+    background: rgba(77,88,111,0.15);
+    padding: 3px;
+    border-radius: 8px;
+    width: fit-content;
+  }
+
+  .tab {
+    padding: 6px 16px;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    border: none;
+    background: transparent;
+    color: var(--ink-light);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    background: var(--card-bg);
+    color: var(--ink);
+    box-shadow: 0 1px 3px rgba(77,88,111,0.15);
+  }
+
+  /* 格子區塊 — 深藍底 */
+  .grid-section {
+    background: var(--paper);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+
+  .grid-label {
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #ffffff;
+    margin-bottom: 14px;
+  }
+
+  .grid { display: flex; flex-wrap: wrap; gap: 5px; }
+
+  /* 圓形色塊 */
+  .cell {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(220,229,239,0.25);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .cell:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    z-index: 10;
+  }
+
+  /* 已過的空白日用 #DCE5EF */
+  .cell.past-empty { background: rgba(220,229,239,0.5); }
+  .cell.happy { background: var(--happy); }
+  .cell.sad { background: var(--sad); }
+  .cell.neutral { background: var(--neutral); }
+  .cell.today { border-color: #DCE5EF; }
+  .cell.future { background: rgba(220,229,239,0.5); cursor: default; }
+
+  .cell-tooltip {
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2a3244;
+    color: #DCE5EF;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+    letter-spacing: 0.04em;
+  }
+
+  .cell:hover .cell-tooltip { opacity: 1; }
+  .week-cell:hover .cell-tooltip { opacity: 1; }
+
+  /* 本月：數字和圓點同一排 */
+  .month-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 5px;
+  }
+
+  .month-row-label {
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 9px;
+    color: rgba(220,229,239,0.5);
+    text-align: center;
+    letter-spacing: 0.04em;
+    width: 28px;
+    flex-shrink: 0;
+    line-height: 28px;
+  }
+
+  /* 週視圖 */
+  .week-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .week-day-label {
+    width: 44px;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 9px;
+    color: #ffffff;
+    text-align: center;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+
+  .week-cell {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(220,229,239,0.25);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform 0.12s, box-shadow 0.12s;
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 11px;
+    color: rgba(220,229,239,0.5);
+  }
+
+  .week-cell:hover {
+    transform: scale(1.08);
+    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+    z-index: 10;
+  }
+
+  .week-cell.happy { background: var(--happy); color: rgba(77,88,111,0.7); }
+  .week-cell.sad { background: var(--sad); color: rgba(255,255,255,0.8); }
+  .week-cell.neutral { background: var(--neutral); color: rgba(255,255,255,0.8); }
+  .week-cell.past-empty-week { background: rgba(220,229,239,0.5); }
+  .week-cell.today-cell { border-color: #DCE5EF; }
+  .week-cell.future { background: rgba(220,229,239,0.5); cursor: default; }
+
+  /* 補填 modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .modal-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal {
+    background: var(--card-bg);
+    border-radius: 14px;
+    padding: 28px;
+    width: 340px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    transform: translateY(8px);
+    transition: transform 0.2s;
+  }
+
+  .modal-overlay.show .modal { transform: translateY(0); }
+
+  .modal-date {
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink-light);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .modal-title {
+    font-size: 15px;
+    color: var(--ink);
+    margin-bottom: 18px;
+    font-weight: 400;
+  }
+
+  .modal-moods {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .modal-mood-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1.5px solid #E0D9D0;
+    border-radius: 30px;
+    background: var(--bg);
+    cursor: pointer;
+    font-family: 'Noto Sans JP', 'PingFang TC', sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+
+  .modal-mood-btn.sel-happy { background: var(--happy-light); border-color: var(--happy); }
+  .modal-mood-btn.sel-sad { background: var(--sad-light); border-color: var(--sad); }
+  .modal-mood-btn.sel-neutral { background: var(--neutral-light); border-color: var(--neutral); }
+
+  .modal-swatch {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .modal textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 10px 12px;
+    border: 1.5px solid #E0D9D0;
+    border-radius: 8px;
+    background: var(--bg);
+    font-family: 'Noto Sans JP', 'PingFang TC', sans-serif;
+    font-size: 12px;
+    color: var(--ink);
+    resize: vertical;
+    outline: none;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+
+  .modal-clear {
+    background: transparent;
+    border: none;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 11px;
+    color: var(--ink);
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    padding: 4px 0;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.15s;
+  }
+  .modal-clear:hover { color: #C06145; }
+
+  .modal-cancel {
+    padding: 8px 18px;
+    border: 1.5px solid #E0D9D0;
+    border-radius: 30px;
+    background: transparent;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--ink-light);
+    cursor: pointer;
+  }
+
+  .modal-save {
+    padding: 8px 18px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    border-radius: 30px;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .modal-save:hover { opacity: 0.85; }
+
+  /* 打卡區 */
+  .checkin-card {
+    background: var(--card-bg);
+    border: 1px solid #E0D9D0;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(77,88,111,0.06);
+  }
+
+  .checkin-title {
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    color: var(--ink);
+  }
+
+  .today-date {
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 11px;
+    color: var(--ink-light);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .mood-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+
+  .mood-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 1.5px solid #E0D9D0;
+    border-radius: 30px;
+    background: var(--bg);
+    cursor: pointer;
+    font-family: 'Noto Sans JP', 'PingFang TC', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    transition: all 0.18s;
+  }
+
+  .mood-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(77,88,111,0.12); }
+  .mood-btn.selected-happy { background: var(--happy-light); border-color: var(--happy); }
+  .mood-btn.selected-sad { background: var(--sad-light); border-color: var(--sad); }
+  .mood-btn.selected-neutral { background: var(--neutral-light); border-color: var(--neutral); }
+
+  .mood-swatch {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  textarea {
+    width: 100%;
+    min-height: 72px;
+    padding: 12px 14px;
+    border: 1.5px solid #E0D9D0;
+    border-radius: 10px;
+    background: var(--bg);
+    font-family: 'Noto Sans JP', 'PingFang TC', sans-serif;
+    font-size: 13px;
+    color: var(--ink);
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+    margin-bottom: 14px;
+    line-height: 1.6;
+  }
+
+  textarea:focus { border-color: var(--ink-light); }
+  textarea::placeholder { color: var(--ink-light); font-size: 12px; }
+
+  .save-btn {
+    padding: 10px 26px;
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: none;
+    border-radius: 30px;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+
+  .save-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  .save-msg {
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 11px;
+    color: var(--ink-light);
+    margin-left: 12px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    letter-spacing: 0.06em;
+  }
+
+  .save-msg.show { opacity: 1; }
+
+  .stats-bar {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(220,229,239,0.2);
+  }
+
+  .stats-ratio-bar {
+    display: flex;
+    width: 100%;
+    height: 10px;
+    border-radius: 10px;
+    overflow: hidden;
+    gap: 2px;
+    margin-bottom: 8px;
+  }
+
+  .stats-legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 10px;
+    color: rgba(220,229,239,0.55);
+    letter-spacing: 0.04em;
+  }
+
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .stat strong { font-weight: 400; color: rgba(220,229,239,0.85); }
+
+  .month-section-label {
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 10px;
+    color: #ffffff;
+    margin-bottom: 5px;
+    margin-top: 14px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  @media (max-width: 600px) {
+    .cell { width: 22px; height: 22px; }
+    .month-row-label { width: 22px; font-size: 8px; }
+    header { flex-direction: column; align-items: flex-start; }
+    h1 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div>
+      <h1>The Day of today's colour</h1>
+      <div class="subtitle" id="currentYear"></div>
+    </div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--happy)"></div>開心
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--sad)"></div>不開心
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--neutral)"></div>沒感覺
+      </div>
+    </div>
+  </header>
+
+  <div class="view-tabs">
+    <button class="tab" onclick="switchView('week')">本週</button>
+    <button class="tab active" onclick="switchView('month')">本月</button>
+    <button class="tab" onclick="switchView('quarter')">本季</button>
+    <button class="tab" onclick="switchView('year')">今年</button>
+  </div>
+
+  <div class="grid-section">
+    <div class="grid-label" id="gridLabel">本月</div>
+    <div id="gridContainer"></div>
+    <div class="stats-bar" id="statsBar"></div>
+  </div>
+
+  <div class="checkin-card">
+    <div class="checkin-title">
+      What about today?
+      <span class="today-date" id="todayLabel"></span>
+    </div>
+    <div class="mood-buttons">
+      <button class="mood-btn" id="btn-happy" onclick="selectMood('happy')">
+        <div class="mood-swatch" style="background:var(--happy)"></div>開心
+      </button>
+      <button class="mood-btn" id="btn-sad" onclick="selectMood('sad')">
+        <div class="mood-swatch" style="background:var(--sad)"></div>不開心
+      </button>
+      <button class="mood-btn" id="btn-neutral" onclick="selectMood('neutral')">
+        <div class="mood-swatch" style="background:var(--neutral)"></div>沒感覺
+      </button>
+    </div>
+    <textarea id="noteInput" placeholder="備注：今天發生了什麼？（可以不填）"></textarea>
+    <div style="display:flex;align-items:center">
+      <button class="save-btn" onclick="saveToday()">記錄今天</button>
+      <span class="save-msg" id="saveMsg">已儲存 ✓</span>
+    </div>
+  </div>
+</div>
+
+<!-- 補填 Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-date" id="modalDate"></div>
+      <button class="modal-clear" onclick="clearModal()">清除紀錄</button>
+    </div>
+    <div class="modal-title">補填這天的心情</div>
+    <hr style="border:none;border-top:1px solid rgba(77,88,111,0.15);margin:12px 0;">
+    <div class="modal-moods">
+      <button class="modal-mood-btn" id="mbtn-happy" onclick="selectModalMood('happy')">
+        <div class="modal-swatch" style="background:var(--happy)"></div>開心
+      </button>
+      <button class="modal-mood-btn" id="mbtn-sad" onclick="selectModalMood('sad')">
+        <div class="modal-swatch" style="background:var(--sad)"></div>不開心
+      </button>
+      <button class="modal-mood-btn" id="mbtn-neutral" onclick="selectModalMood('neutral')">
+        <div class="modal-swatch" style="background:var(--neutral)"></div>沒感覺
+      </button>
+    </div>
+    <textarea id="modalNote" placeholder="備注（可以不填）"></textarea>
+    <hr style="border:none;border-top:1px solid rgba(77,88,111,0.15);margin:12px 0;">
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeModalDirect()">取消</button>
+      <button class="modal-save" onclick="saveModal()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'mood_grid_data_v2';
+  let moodData = {};
+  let selectedMood = null;
+  let modalMood = null;
+  let modalDate = null;
+  let currentView = 'month';
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) moodData = JSON.parse(raw);
+    } catch(e) { moodData = {}; }
+  }
+
+  function saveData() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(moodData)); } catch(e) {}
+  }
+
+  function formatDate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function formatDisplay(dateStr) {
+    const [y,m,d] = dateStr.split('-');
+    return `${m}/${d}`;
+  }
+
+  const today = new Date();
+  const todayStr = formatDate(today);
+
+  function initHeader() {
+    document.getElementById('currentYear').textContent = `${today.getFullYear()}`;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    document.getElementById('todayLabel').textContent =
+      `${months[today.getMonth()]} ${String(today.getDate()).padStart(2,'0')}, ${today.getFullYear()}`;
+  }
+
+  function loadTodayData() {
+    const entry = moodData[todayStr];
+    if (entry) {
+      selectMoodUI(entry.mood);
+      document.getElementById('noteInput').value = entry.note || '';
+    }
+  }
+
+  function selectMood(mood) { selectedMood = mood; selectMoodUI(mood); }
+
+  function selectMoodUI(mood) {
+    ['happy','sad','neutral'].forEach(m => {
+      document.getElementById(`btn-${m}`).className = `mood-btn${mood===m ? ` selected-${m}` : ''}`;
+    });
+    selectedMood = mood;
+  }
+
+  function saveToday() {
+    if (!selectedMood) { alert('請先選擇今天的心情！'); return; }
+    const note = document.getElementById('noteInput').value.trim();
+    moodData[todayStr] = { mood: selectedMood, note };
+    saveData();
+    renderGrid();
+    const msg = document.getElementById('saveMsg');
+    msg.classList.add('show');
+    setTimeout(() => msg.classList.remove('show'), 2000);
+  }
+
+  // --- Modal 補填 ---
+  function openModal(dateStr) {
+    modalDate = dateStr;
+    modalMood = null;
+    const entry = moodData[dateStr];
+    document.getElementById('modalDate').textContent = formatDisplay(dateStr);
+    document.getElementById('modalNote').value = entry?.note || '';
+    if (entry?.mood) selectModalMoodUI(entry.mood);
+    else ['happy','sad','neutral'].forEach(m => {
+      document.getElementById(`mbtn-${m}`).className = 'modal-mood-btn';
+    });
+    document.getElementById('modalOverlay').classList.add('show');
+  }
+
+  function closeModal(e) {
+    if (e.target === document.getElementById('modalOverlay')) closeModalDirect();
+  }
+
+  function closeModalDirect() {
+    document.getElementById('modalOverlay').classList.remove('show');
+    modalDate = null; modalMood = null;
+  }
+
+  function selectModalMood(mood) { modalMood = mood; selectModalMoodUI(mood); }
+
+  function selectModalMoodUI(mood) {
+    ['happy','sad','neutral'].forEach(m => {
+      document.getElementById(`mbtn-${m}`).className = `modal-mood-btn${mood===m ? ` sel-${m}` : ''}`;
+    });
+    modalMood = mood;
+  }
+
+  function saveModal() {
+    if (!modalMood) { alert('請選擇心情！'); return; }
+    const note = document.getElementById('modalNote').value.trim();
+    moodData[modalDate] = { mood: modalMood, note };
+    saveData();
+    renderGrid();
+    closeModalDirect();
+  }
+
+  function clearModal() {
+    if (!moodData[modalDate]) { closeModalDirect(); return; }
+    delete moodData[modalDate];
+    saveData();
+    renderGrid();
+    closeModalDirect();
+  }
+
+  function switchView(view) {
+    currentView = view;
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      t.classList.toggle('active', ['week','month','quarter','year'][i] === view);
+    });
+    renderGrid();
+  }
+
+  function getMoodClass(dateStr) {
+    return moodData[dateStr]?.mood || '';
+  }
+
+  function renderGrid() {
+    const container = document.getElementById('gridContainer');
+    const label = document.getElementById('gridLabel');
+    container.innerHTML = '';
+    if (currentView === 'week') renderWeek(container, label);
+    else if (currentView === 'month') renderMonth(container, label);
+    else if (currentView === 'quarter') renderQuarter(container, label);
+    else renderYear(container, label);
+    renderStats();
+  }
+
+  function renderWeek(container, label) {
+    label.textContent = 'This Week';
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+
+    const labelsRow = document.createElement('div');
+    labelsRow.style.cssText = 'display:flex;gap:10px;margin-bottom:6px;';
+    const cellsRow = document.createElement('div');
+    cellsRow.style.cssText = 'display:flex;gap:10px;';
+
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startOfWeek);
+      d.setDate(startOfWeek.getDate() + i);
+      const dateStr = formatDate(d);
+      const isFuture = d > today;
+      const isPast = d < today;
+
+      const lbl = document.createElement('div');
+      lbl.className = 'week-day-label';
+      lbl.textContent = days[i];
+      labelsRow.appendChild(lbl);
+
+      const cell = document.createElement('div');
+      const mood = getMoodClass(dateStr);
+      cell.className = `week-cell${dateStr === todayStr ? ' today-cell' : ''}${isFuture ? ' future' : ''}`;
+      if (mood) cell.classList.add(mood);
+      else if (isPast) cell.classList.add('past-empty-week');
+      cell.textContent = d.getDate();
+
+      if (!isFuture) {
+        const entry = moodData[dateStr];
+        const tip = document.createElement('div');
+        tip.className = 'cell-tooltip';
+        tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : ''}`;
+        cell.appendChild(tip);
+        cell.onclick = () => { if (dateStr !== todayStr) openModal(dateStr); };
+      }
+      cellsRow.appendChild(cell);
+    }
+    container.appendChild(labelsRow);
+    container.appendChild(cellsRow);
+  }
+
+  function renderMonth(container, label) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    label.textContent = `${months[today.getMonth()]} ${today.getFullYear()}`;
+
+    const year = today.getFullYear();
+    const month = today.getMonth();
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const dateStr = formatDate(date);
+      const isFuture = date > today;
+      const isPast = date < today;
+
+      const col = document.createElement('div');
+      col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;';
+
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'width:31px;font-family:Sulphur Point,sans-serif;font-size:8px;color:#ffffff;text-align:center;letter-spacing:0.04em;';
+      lbl.textContent = String(d).padStart(2,'0');
+
+      const cell = document.createElement('div');
+      const mood = getMoodClass(dateStr);
+      cell.className = `week-cell${dateStr === todayStr ? ' today-cell' : ''}${isFuture ? ' future' : ''}`;
+      if (mood) cell.classList.add(mood);
+      else if (isPast) cell.classList.add('past-empty-week');
+      cell.style.cssText = 'width:31px;height:31px;font-size:9px;';
+
+      if (!isFuture) {
+        const entry = moodData[dateStr];
+        const tip = document.createElement('div');
+        tip.className = 'cell-tooltip';
+        tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : (mood ? '' : ' 點擊補填')}`;
+        cell.appendChild(tip);
+        if (dateStr !== todayStr) cell.onclick = () => openModal(dateStr);
+      }
+
+      col.appendChild(lbl);
+      col.appendChild(cell);
+      wrap.appendChild(col);
+    }
+
+    container.appendChild(wrap);
+  }
+
+  function renderQuarter(container, label) {
+    const quarterStart = Math.floor(today.getMonth() / 3) * 3;
+    const qNames = ['Q1','Q2','Q3','Q4'];
+    label.textContent = qNames[Math.floor(today.getMonth()/3)];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    for (let m = quarterStart; m < quarterStart + 3; m++) {
+      const ml = document.createElement('div');
+      ml.className = 'month-section-label';
+      ml.textContent = months[m];
+      container.appendChild(ml);
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      const daysInMonth = new Date(today.getFullYear(), m+1, 0).getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(today.getFullYear(), m, d);
+        const dateStr = formatDate(date);
+        const isFuture = date > today;
+        const isPast = date < today;
+        grid.appendChild(createCell(dateStr, isFuture, isPast));
+      }
+      container.appendChild(grid);
+    }
+  }
+
+  function renderYear(container, label) {
+    label.textContent = `${today.getFullYear()}`;
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+    for (let m = 0; m < 12; m++) {
+      const ml = document.createElement('div');
+      ml.className = 'month-section-label';
+      ml.textContent = months[m];
+      container.appendChild(ml);
+
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      const daysInMonth = new Date(today.getFullYear(), m+1, 0).getDate();
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date = new Date(today.getFullYear(), m, d);
+        const dateStr = formatDate(date);
+        const isFuture = date > today;
+        const isPast = date < today;
+        const cell = createCell(dateStr, isFuture, isPast);
+        cell.style.width = '22px';
+        cell.style.height = '22px';
+        grid.appendChild(cell);
+      }
+      container.appendChild(grid);
+    }
+  }
+
+  function createCell(dateStr, isFuture, isPast) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    if (isFuture) {
+      cell.classList.add('future');
+      return cell;
+    }
+    if (dateStr === todayStr) cell.classList.add('today');
+    const mood = getMoodClass(dateStr);
+    if (mood) cell.classList.add(mood);
+    else if (isPast) cell.classList.add('past-empty');
+
+    const entry = moodData[dateStr];
+    const tip = document.createElement('div');
+    tip.className = 'cell-tooltip';
+    tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : (mood ? '' : ' 點擊補填')}`;
+    cell.appendChild(tip);
+
+    if (dateStr !== todayStr) {
+      cell.onclick = () => openModal(dateStr);
+    }
+    return cell;
+  }
+
+  function renderStats() {
+    const bar = document.getElementById('statsBar');
+    bar.innerHTML = '';
+    let counts = { happy: 0, sad: 0, neutral: 0, total: 0 };
+    const now = new Date();
+    let start;
+
+    if (currentView === 'week') {
+      start = new Date(now); start.setDate(now.getDate() - now.getDay());
+    } else if (currentView === 'month') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (currentView === 'quarter') {
+      start = new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1);
+    } else {
+      start = new Date(now.getFullYear(), 0, 1);
+    }
+
+    Object.entries(moodData).forEach(([date, entry]) => {
+      const d = new Date(date);
+      if (d >= start && d <= now) { counts[entry.mood]++; counts.total++; }
+    });
+
+    // 本週視圖：顯示每天有紀錄的條目列表
+    if (currentView === 'week') {
+      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - now.getDay());
+      const moodColors = { happy: '#F6CE83', sad: '#C06145', neutral: '#9F9F9F' };
+      const moodLabels = { happy: '開心', sad: '不開心', neutral: '沒感覺' };
+      let hasAny = false;
+
+      const listWrap = document.createElement('div');
+      listWrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-bottom:10px;';
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(startOfWeek);
+        d.setDate(startOfWeek.getDate() + i);
+        if (d > now) continue;
+        const dateStr = formatDate(d);
+        const entry = moodData[dateStr];
+        if (!entry) continue;
+        hasAny = true;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+        const dot = document.createElement('div');
+        dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${moodColors[entry.mood]};flex-shrink:0;`;
+
+        const txt = document.createElement('div');
+        txt.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:10px;color:rgba(220,229,239,0.7);letter-spacing:0.04em;';
+        const noteStr = entry.note ? ` · ${entry.note.slice(0,30)}` : '';
+        txt.innerHTML = `<span style="color:#fff">${days[i].toUpperCase()} ${String(d.getDate()).padStart(2,'0')}</span>　${moodLabels[entry.mood]}${noteStr}`;
+
+        row.appendChild(dot);
+        row.appendChild(txt);
+        listWrap.appendChild(row);
+      }
+
+      if (hasAny) bar.appendChild(listWrap);
+      else {
+        bar.innerHTML = '<div style="font-family:Sulphur Point,sans-serif;font-size:11px;color:rgba(220,229,239,0.4);letter-spacing:0.06em;">No records yet</div>';
+        return;
+      }
+    }
+
+    if (counts.total === 0) {
+      bar.innerHTML = '<div style="font-family:Sulphur Point,sans-serif;font-size:11px;color:rgba(220,229,239,0.4);letter-spacing:0.06em;">No records yet</div>';
+      return;
+    }
+
+    // 計算這段時間的總天數（不含未來）
+    let totalDays = 0;
+    const cur = new Date(start);
+    while (cur <= now) { totalDays++; cur.setDate(cur.getDate()+1); }
+    const unrecorded = totalDays - counts.total;
+
+    const allItems = [
+      { key: 'happy', label: '開心', color: '#F6CE83', count: counts.happy },
+      { key: 'sad', label: '不開心', color: '#C06145', count: counts.sad },
+      { key: 'neutral', label: '沒感覺', color: '#9F9F9F', count: counts.neutral },
+      { key: 'unrecorded', label: '未記錄', color: '#DCE5EF', count: unrecorded }
+    ];
+
+    // 共用 10 格，每格代表一個類別的比例
+    const boxesWrap = document.createElement('div');
+    boxesWrap.style.cssText = 'display:flex;gap:2px;margin-bottom:8px;flex-wrap:wrap;';
+
+    // 計算每個類別佔幾格（共10格），確保加起來=10
+    let assigned = allItems.map(({ count }) => Math.floor(count / totalDays * 10));
+    let remainder = 10 - assigned.reduce((a, b) => a + b, 0);
+    // 把剩餘格數補給比例最大的項目
+    const fracs = allItems.map(({ count }, i) => count / totalDays * 10 - assigned[i]);
+    const sorted = fracs.map((f, i) => [f, i]).sort((a, b) => b[0] - a[0]);
+    for (let i = 0; i < remainder; i++) assigned[sorted[i][1]]++;
+
+    allItems.forEach(({ color }, idx) => {
+      for (let i = 0; i < assigned[idx]; i++) {
+        const box = document.createElement('div');
+        box.style.cssText = `width:14px;height:14px;border-radius:2px;background:${color};flex-shrink:0;`;
+        boxesWrap.appendChild(box);
+      }
+    });
+    // 圖例橫排（緊接在10格右邊，包在同一個flex row裡）
+    const statsRow = document.createElement('div');
+    statsRow.style.cssText = 'display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;';
+
+    statsRow.appendChild(boxesWrap);
+
+    const legend = document.createElement('div');
+    legend.style.cssText = 'display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center;';
+    allItems.forEach(({ label, color, count }) => {
+      if (count <= 0) return;
+      const pct = Math.round(count / totalDays * 100);
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex;align-items:center;gap:4px;';
+      const dot = document.createElement('div');
+      dot.style.cssText = `width:7px;height:7px;border-radius:2px;background:${color};flex-shrink:0;`;
+      const txt = document.createElement('div');
+      txt.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:10px;color:rgba(220,229,239,0.55);letter-spacing:0.04em;white-space:nowrap;';
+      txt.innerHTML = `<span style="color:rgba(220,229,239,0.85)">${label}</span> ${count}天·${pct}%`;
+      item.appendChild(dot);
+      item.appendChild(txt);
+      legend.appendChild(item);
+    });
+    statsRow.appendChild(legend);
+    bar.appendChild(statsRow);
+  }
+
+  loadData();
+  initHeader();
+  loadTodayData();
+  renderGrid();
+</script>
+</body>
+</html>
