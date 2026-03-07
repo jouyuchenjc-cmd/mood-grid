@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Day of today's colour</title>
@@ -262,11 +265,7 @@
     color: rgba(220,229,239,0.5);
   }
 
-  .week-cell:hover {
-    transform: scale(1.08);
-    box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-    z-index: 10;
-  }
+  .week-cell:hover { cursor: pointer; }
 
   .week-cell.happy { background: var(--happy); color: rgba(77,88,111,0.7); }
   .week-cell.sad { background: var(--sad); color: rgba(255,255,255,0.8); }
@@ -618,7 +617,16 @@
     <div class="stats-bar" id="statsBar"></div>
   </div>
 
-  <div class="checkin-card">
+  <!-- 紀錄列表 -->
+  <div class="grid-card" style="margin-top:50px;margin-bottom:0;padding-left:30px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <button onclick="toggleLog()" id="logToggleBtn" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);text-decoration:underline;text-underline-offset:3px;padding:0;">Recent Log</button>
+      <span id="logToggleArrow" style="font-size:16px;color:var(--ink);font-weight:700;font-family:monospace;line-height:1;">−</span>
+    </div>
+    <div id="logList" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
+  </div>
+
+  <div class="checkin-card" style="margin-top:50px;">
     <div class="checkin-title">
       What about today?
       <span class="today-date" id="todayLabel"></span>
@@ -732,6 +740,7 @@
     moodData[todayStr] = { mood: selectedMood, note };
     saveData();
     renderGrid();
+    renderLog();
     const msg = document.getElementById('saveMsg');
     msg.classList.add('show');
     setTimeout(() => msg.classList.remove('show'), 2000);
@@ -775,6 +784,7 @@
     moodData[modalDate] = { mood: modalMood, note };
     saveData();
     renderGrid();
+    renderLog();
     closeModalDirect();
   }
 
@@ -783,7 +793,70 @@
     delete moodData[modalDate];
     saveData();
     renderGrid();
+    renderLog();
     closeModalDirect();
+  }
+
+  function renderLog() {
+    const list = document.getElementById('logList');
+    if (!list) return;
+    list.innerHTML = '';
+    const moodColors = { happy: '#F6CE83', sad: '#C06145', neutral: '#9F9F9F' };
+    const moodLabels = { happy: '開心', sad: '不開心', neutral: '沒感覺' };
+
+    // 取所有紀錄，由新到舊排序
+    const entries = Object.entries(moodData)
+      .sort((a, b) => b[0].localeCompare(a[0]));
+
+    if (entries.length === 0) {
+      list.innerHTML = '<div style="font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;">No records yet</div>';
+      return;
+    }
+
+    entries.forEach(([dateStr, entry]) => {
+      const [y, m, d] = dateStr.split('-');
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const dateLabel = `${months[parseInt(m)-1]} ${d}, ${y}`;
+
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(77,88,111,0.08);';
+
+      const dot = document.createElement('div');
+      dot.style.cssText = `width:10px;height:10px;border-radius:50%;background:${moodColors[entry.mood]};flex-shrink:0;`;
+
+      const info = document.createElement('div');
+      info.style.cssText = 'display:flex;flex-direction:column;gap:2px;flex:1;';
+
+      const top = document.createElement('div');
+      top.style.cssText = 'display:flex;align-items:center;gap:8px;';
+
+      const dateTxt = document.createElement('span');
+      dateTxt.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink);letter-spacing:0.04em;';
+      dateTxt.textContent = dateLabel;
+
+      top.appendChild(dateTxt);
+      info.appendChild(top);
+
+      if (entry.note) {
+        const note = document.createElement('div');
+        note.style.cssText = 'font-family:Noto Sans JP,PingFang TC,sans-serif;font-size:11px;color:var(--ink-light);';
+        note.textContent = entry.note;
+        info.appendChild(note);
+      }
+
+      row.appendChild(dot);
+      row.appendChild(info);
+      list.appendChild(row);
+    });
+  }
+
+  let logOpen = true;
+  function toggleLog() {
+    logOpen = !logOpen;
+    const list = document.getElementById('logList');
+    const arrow = document.getElementById('logToggleArrow');
+    list.style.display = logOpen ? 'flex' : 'none';
+    arrow.textContent = logOpen ? '−' : '+';
   }
 
   function switchView(view) {
@@ -815,10 +888,9 @@
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay());
 
-    const labelsRow = document.createElement('div');
-    labelsRow.style.cssText = 'display:flex;gap:10px;margin-bottom:6px;';
-    const cellsRow = document.createElement('div');
-    cellsRow.style.cssText = 'display:flex;gap:10px;';
+    // 整排可以左右 scroll，SUN-SAT label 跟圓圈綁在同一個 column
+    const scrollRow = document.createElement('div');
+    scrollRow.style.cssText = 'display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;';
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
@@ -827,10 +899,14 @@
       const isFuture = d > today;
       const isPast = d < today;
 
+      // 每天一個 col：label 在上，圓圈在下
+      const col = document.createElement('div');
+      col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;';
+
       const lbl = document.createElement('div');
       lbl.className = 'week-day-label';
       lbl.textContent = days[i];
-      labelsRow.appendChild(lbl);
+      col.appendChild(lbl);
 
       const cell = document.createElement('div');
       const mood = getMoodClass(dateStr);
@@ -840,17 +916,13 @@
       cell.textContent = d.getDate();
 
       if (!isFuture) {
-        const entry = moodData[dateStr];
-        const tip = document.createElement('div');
-        tip.className = 'cell-tooltip';
-        tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : ''}`;
-        cell.appendChild(tip);
         cell.onclick = () => { if (dateStr !== todayStr) openModal(dateStr); };
       }
-      cellsRow.appendChild(cell);
+
+      col.appendChild(cell);
+      scrollRow.appendChild(col);
     }
-    container.appendChild(labelsRow);
-    container.appendChild(cellsRow);
+    container.appendChild(scrollRow);
   }
 
   function renderMonth(container, label) {
@@ -995,54 +1067,11 @@
       start = new Date(now.getFullYear(), 0, 1);
     }
 
+    const startStr = formatDate(start);
+    const nowStr = formatDate(now);
     Object.entries(moodData).forEach(([date, entry]) => {
-      const d = new Date(date);
-      if (d >= start && d <= now) { counts[entry.mood]++; counts.total++; }
+      if (date >= startStr && date <= nowStr) { counts[entry.mood]++; counts.total++; }
     });
-
-    // 本週視圖：顯示每天有紀錄的條目列表
-    if (currentView === 'week') {
-      const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      const moodColors = { happy: '#F6CE83', sad: '#C06145', neutral: '#9F9F9F' };
-      const moodLabels = { happy: '開心', sad: '不開心', neutral: '沒感覺' };
-      let hasAny = false;
-
-      const listWrap = document.createElement('div');
-      listWrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;margin-bottom:10px;';
-
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(startOfWeek);
-        d.setDate(startOfWeek.getDate() + i);
-        if (d > now) continue;
-        const dateStr = formatDate(d);
-        const entry = moodData[dateStr];
-        if (!entry) continue;
-        hasAny = true;
-
-        const row = document.createElement('div');
-        row.style.cssText = 'display:flex;align-items:center;gap:8px;';
-
-        const dot = document.createElement('div');
-        dot.style.cssText = `width:7px;height:7px;border-radius:50%;background:${moodColors[entry.mood]};flex-shrink:0;`;
-
-        const txt = document.createElement('div');
-        txt.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:10px;color:rgba(220,229,239,0.7);letter-spacing:0.04em;';
-        const noteStr = entry.note ? ` · ${entry.note.slice(0,30)}` : '';
-        txt.innerHTML = `<span style="color:#fff">${days[i].toUpperCase()} ${String(d.getDate()).padStart(2,'0')}</span>　${moodLabels[entry.mood]}${noteStr}`;
-
-        row.appendChild(dot);
-        row.appendChild(txt);
-        listWrap.appendChild(row);
-      }
-
-      if (hasAny) bar.appendChild(listWrap);
-      else {
-        bar.innerHTML = '<div style="font-family:Sulphur Point,sans-serif;font-size:11px;color:rgba(220,229,239,0.4);letter-spacing:0.06em;">No records yet</div>';
-        return;
-      }
-    }
 
     if (counts.total === 0) {
       bar.innerHTML = '<div style="font-family:Sulphur Point,sans-serif;font-size:11px;color:rgba(220,229,239,0.4);letter-spacing:0.06em;">No records yet</div>';
@@ -1105,12 +1134,14 @@
     });
     statsRow.appendChild(legend);
     bar.appendChild(statsRow);
+
   }
 
   loadData();
   initHeader();
   loadTodayData();
   renderGrid();
+  renderLog();
 </script>
 </body>
 </html>
