@@ -12,7 +12,7 @@
 
   :root {
     --happy: #F6CE83;
-    --mixed: #C17E4F;
+    --mixed: #d39266;
     --happy-light: #FBE8C0;
     --sad: #C06145;
     --sad-light: #E8B09A;
@@ -826,7 +826,7 @@
     const list = document.getElementById('logList');
     if (!list) return;
     list.innerHTML = '';
-    const moodColors = { happy: '#F6CE83', mixed: '#C17E4F', sad: '#C06145', neutral: '#9F9F9F' };
+    const moodColors = { happy: '#F6CE83', mixed: '#d39266', sad: '#C06145', neutral: '#9F9F9F' };
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const realNow = new Date();
 
@@ -1180,7 +1180,7 @@
 
     const allItems = [
       { key: 'happy', label: '開心', color: '#F6CE83', count: counts.happy },
-      { key: 'mixed', label: '各半', color: '#C17E4F', count: counts.mixed },
+      { key: 'mixed', label: '各半', color: '#d39266', count: counts.mixed },
       { key: 'sad', label: '不開心', color: '#C06145', count: counts.sad },
       { key: 'neutral', label: '沒感覺', color: '#9F9F9F', count: counts.neutral },
       { key: 'unrecorded', label: '未記錄', color: '#DCE5EF', count: unrecorded }
