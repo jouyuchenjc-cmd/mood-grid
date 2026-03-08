@@ -6,13 +6,13 @@
   <meta http-equiv="Expires" content="0">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Day of today's colour</title>
+<title>The Colour of Your Day.</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Sulphur+Point:wght@300;400;700&family=Noto+Sans+JP:wght@300;400;500&display=swap');
 
   :root {
     --happy: #F6CE83;
-    --mixed: #d39266;
+    --mixed: #D39266;
     --happy-light: #FBE8C0;
     --sad: #C06145;
     --sad-light: #E8B09A;
@@ -274,7 +274,11 @@
   .week-cell.mixed { background: var(--mixed); color: rgba(255,255,255,0.8); }
   .week-cell.neutral { background: var(--neutral); color: rgba(255,255,255,0.8); }
   .week-cell.past-empty-week { background: rgba(220,229,239,0.5); }
-  .week-cell.today-cell { border-color: #DCE5EF; }
+  .week-cell.today-cell { border-color: #DCE5EF; border-width: 2px; }
+  .week-cell.today-cell.happy { background: var(--happy); }
+  .week-cell.today-cell.mixed { background: var(--mixed); }
+  .week-cell.today-cell.sad { background: var(--sad); }
+  .week-cell.today-cell.neutral { background: var(--neutral); }
   .week-cell.future { background: rgba(220,229,239,0.5); cursor: default; }
 
   /* 補填 modal */
@@ -594,7 +598,7 @@
 <div class="container">
   <header>
     <div>
-      <h1>The Day of today's colour</h1>
+      <h1>The Colour of Your Day.</h1>
       <div class="subtitle" id="currentYear"></div>
     </div>
     <div class="legend">
@@ -826,7 +830,7 @@
     const list = document.getElementById('logList');
     if (!list) return;
     list.innerHTML = '';
-    const moodColors = { happy: '#F6CE83', mixed: '#d39266', sad: '#C06145', neutral: '#9F9F9F' };
+    const moodColors = { happy: '#F6CE83', mixed: '#D39266', sad: '#C06145', neutral: '#9F9F9F' };
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const realNow = new Date();
 
@@ -1180,7 +1184,7 @@
 
     const allItems = [
       { key: 'happy', label: '開心', color: '#F6CE83', count: counts.happy },
-      { key: 'mixed', label: '各半', color: '#d39266', count: counts.mixed },
+      { key: 'mixed', label: '各半', color: '#D39266', count: counts.mixed },
       { key: 'sad', label: '不開心', color: '#C06145', count: counts.sad },
       { key: 'neutral', label: '沒感覺', color: '#9F9F9F', count: counts.neutral },
       { key: 'unrecorded', label: '未記錄', color: '#DCE5EF', count: unrecorded }
