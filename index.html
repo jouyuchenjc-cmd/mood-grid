@@ -12,6 +12,7 @@
 
   :root {
     --happy: #F6CE83;
+    --mixed: #C17E4F;
     --happy-light: #FBE8C0;
     --sad: #C06145;
     --sad-light: #E8B09A;
@@ -184,6 +185,7 @@
   .cell.past-empty { background: rgba(220,229,239,0.5); }
   .cell.happy { background: var(--happy); }
   .cell.sad { background: var(--sad); }
+  .cell.mixed { background: var(--mixed); }
   .cell.neutral { background: var(--neutral); }
   .cell.today { border-color: #DCE5EF; }
   .cell.future { background: rgba(220,229,239,0.5); cursor: default; }
@@ -269,6 +271,7 @@
 
   .week-cell.happy { background: var(--happy); color: rgba(77,88,111,0.7); }
   .week-cell.sad { background: var(--sad); color: rgba(255,255,255,0.8); }
+  .week-cell.mixed { background: var(--mixed); color: rgba(255,255,255,0.8); }
   .week-cell.neutral { background: var(--neutral); color: rgba(255,255,255,0.8); }
   .week-cell.past-empty-week { background: rgba(220,229,239,0.5); }
   .week-cell.today-cell { border-color: #DCE5EF; }
@@ -345,6 +348,7 @@
   }
 
   .modal-mood-btn.sel-happy { background: var(--happy-light); border-color: var(--happy); }
+  .modal-mood-btn.sel-mixed { background: rgba(193,126,79,0.12); border-color: var(--mixed); }
   .modal-mood-btn.sel-sad { background: var(--sad-light); border-color: var(--sad); }
   .modal-mood-btn.sel-neutral { background: var(--neutral-light); border-color: var(--neutral); }
 
@@ -475,6 +479,7 @@
   .mood-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(77,88,111,0.12); }
   .mood-btn.selected-happy { background: var(--happy-light); border-color: var(--happy); }
   .mood-btn.selected-sad { background: var(--sad-light); border-color: var(--sad); }
+  .mood-btn.selected-mixed { background: rgba(193,126,79,0.15); border-color: var(--mixed); }
   .mood-btn.selected-neutral { background: var(--neutral-light); border-color: var(--neutral); }
 
   .mood-swatch {
@@ -597,6 +602,9 @@
         <div class="legend-dot" style="background:var(--happy)"></div>開心
       </div>
       <div class="legend-item">
+        <div class="legend-dot" style="background:var(--mixed)"></div>各半
+      </div>
+      <div class="legend-item">
         <div class="legend-dot" style="background:var(--sad)"></div>不開心
       </div>
       <div class="legend-item">
@@ -613,7 +621,14 @@
   </div>
 
   <div class="grid-section">
-    <div class="grid-label" id="gridLabel">本月</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div class="grid-label" id="gridLabel" style="margin-bottom:0;"></div>
+      <div id="viewNav" style="display:flex;align-items:center;gap:8px;">
+        <button onclick="navPrev()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink);padding:0;font-family:Sulphur Point,sans-serif;">←</button>
+        <span id="navLabel" style="font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;min-width:60px;text-align:center;"></span>
+        <button onclick="navNext()" style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--ink);padding:0;font-family:Sulphur Point,sans-serif;">→</button>
+      </div>
+    </div>
     <div id="gridContainer"></div>
     <div class="stats-bar" id="statsBar"></div>
   </div>
@@ -621,7 +636,7 @@
   <!-- 紀錄列表 -->
   <div class="grid-card" style="margin-top:50px;margin-bottom:0;padding-left:30px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-      <button onclick="toggleLog()" id="logToggleBtn" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);text-decoration:underline;text-underline-offset:3px;padding:0;">Recent Log</button>
+      <button onclick="toggleLog()" id="logToggleBtn" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);text-decoration:underline;text-underline-offset:3px;padding:0;">Your Recent Life Records Note</button>
       <span id="logToggleArrow" style="font-size:16px;color:var(--ink);font-weight:700;font-family:monospace;line-height:1;">−</span>
     </div>
     <div id="logList" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
@@ -635,6 +650,9 @@
     <div class="mood-buttons">
       <button class="mood-btn" id="btn-happy" onclick="selectMood('happy')">
         <div class="mood-swatch" style="background:var(--happy)"></div>開心
+      </button>
+      <button class="mood-btn" id="btn-mixed" onclick="selectMood('mixed')">
+        <div class="mood-swatch" style="background:var(--mixed)"></div>各半
       </button>
       <button class="mood-btn" id="btn-sad" onclick="selectMood('sad')">
         <div class="mood-swatch" style="background:var(--sad)"></div>不開心
@@ -663,6 +681,9 @@
     <div class="modal-moods">
       <button class="modal-mood-btn" id="mbtn-happy" onclick="selectModalMood('happy')">
         <div class="modal-swatch" style="background:var(--happy)"></div>開心
+      </button>
+      <button class="modal-mood-btn" id="mbtn-mixed" onclick="selectModalMood('mixed')">
+        <div class="modal-swatch" style="background:var(--mixed)"></div>各半
       </button>
       <button class="modal-mood-btn" id="mbtn-sad" onclick="selectModalMood('sad')">
         <div class="modal-swatch" style="background:var(--sad)"></div>不開心
@@ -729,7 +750,7 @@
   function selectMood(mood) { selectedMood = mood; selectMoodUI(mood); }
 
   function selectMoodUI(mood) {
-    ['happy','sad','neutral'].forEach(m => {
+    ['happy','mixed','sad','neutral'].forEach(m => {
       document.getElementById(`btn-${m}`).className = `mood-btn${mood===m ? ` selected-${m}` : ''}`;
     });
     selectedMood = mood;
@@ -755,7 +776,7 @@
     document.getElementById('modalDate').textContent = formatDisplay(dateStr);
     document.getElementById('modalNote').value = entry?.note || '';
     if (entry?.mood) selectModalMoodUI(entry.mood);
-    else ['happy','sad','neutral'].forEach(m => {
+    else ['happy','mixed','sad','neutral'].forEach(m => {
       document.getElementById(`mbtn-${m}`).className = 'modal-mood-btn';
     });
     document.getElementById('modalOverlay').classList.add('show');
@@ -773,7 +794,7 @@
   function selectModalMood(mood) { modalMood = mood; selectModalMoodUI(mood); }
 
   function selectModalMoodUI(mood) {
-    ['happy','sad','neutral'].forEach(m => {
+    ['happy','mixed','sad','neutral'].forEach(m => {
       document.getElementById(`mbtn-${m}`).className = `modal-mood-btn${mood===m ? ` sel-${m}` : ''}`;
     });
     modalMood = mood;
@@ -798,25 +819,59 @@
     closeModalDirect();
   }
 
+  // 看過去哪年的紀錄
+  let logYear = new Date().getFullYear();
+
   function renderLog() {
     const list = document.getElementById('logList');
     if (!list) return;
     list.innerHTML = '';
-    const moodColors = { happy: '#F6CE83', sad: '#C06145', neutral: '#9F9F9F' };
-    const moodLabels = { happy: '開心', sad: '不開心', neutral: '沒感覺' };
+    const moodColors = { happy: '#F6CE83', mixed: '#C17E4F', sad: '#C06145', neutral: '#9F9F9F' };
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const realNow = new Date();
 
-    // 取所有紀錄，由新到舊排序
+    // 用 viewOffset 計算 ref（跟 renderGrid 一樣的邏輯）
+    const ref = new Date(realNow);
+    if (currentView === 'week') ref.setDate(realNow.getDate() + viewOffset * 7);
+    else if (currentView === 'month') ref.setMonth(realNow.getMonth() + viewOffset);
+    else if (currentView === 'quarter') ref.setMonth(realNow.getMonth() + viewOffset * 3);
+    else ref.setFullYear(realNow.getFullYear() + viewOffset);
+
+    const now = ref > realNow ? realNow : ref; // 不超過今天
+
+    // 依視圖決定 filter 範圍
+    let startStr, endStr;
+    if (currentView === 'week') {
+      const s = new Date(ref); s.setDate(ref.getDate() - ref.getDay());
+      startStr = formatDate(s); endStr = formatDate(now);
+    } else if (currentView === 'month') {
+      startStr = `${ref.getFullYear()}-${String(ref.getMonth()+1).padStart(2,'0')}-01`;
+      endStr = formatDate(now);
+    } else if (currentView === 'quarter') {
+      const qs = Math.floor(ref.getMonth()/3)*3;
+      startStr = `${ref.getFullYear()}-${String(qs+1).padStart(2,'0')}-01`;
+      endStr = formatDate(now);
+    } else {
+      startStr = `${ref.getFullYear()}-01-01`;
+      endStr = ref.getFullYear() === realNow.getFullYear() ? formatDate(realNow) : `${ref.getFullYear()}-12-31`;
+    }
+
+
+
     const entries = Object.entries(moodData)
+      .filter(([d]) => d >= startStr && d <= endStr)
       .sort((a, b) => b[0].localeCompare(a[0]));
 
     if (entries.length === 0) {
-      list.innerHTML = '<div style="font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;">No records yet</div>';
+      const empty = document.createElement('div');
+      empty.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;';
+      empty.textContent = 'No records yet';
+      list.appendChild(empty);
       return;
     }
 
     entries.forEach(([dateStr, entry]) => {
       const [y, m, d] = dateStr.split('-');
-      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       const dateLabel = `${months[parseInt(m)-1]} ${d}, ${y}`;
 
       const row = document.createElement('div');
@@ -828,15 +883,10 @@
       const info = document.createElement('div');
       info.style.cssText = 'display:flex;flex-direction:column;gap:2px;flex:1;';
 
-      const top = document.createElement('div');
-      top.style.cssText = 'display:flex;align-items:center;gap:8px;';
-
       const dateTxt = document.createElement('span');
       dateTxt.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink);letter-spacing:0.04em;';
       dateTxt.textContent = dateLabel;
-
-      top.appendChild(dateTxt);
-      info.appendChild(top);
+      info.appendChild(dateTxt);
 
       if (entry.note) {
         const note = document.createElement('div');
@@ -852,6 +902,10 @@
   }
 
   let logOpen = true;
+  let viewOffset = 0; // 0 = 當前, -1 = 上一個, 1 = 下一個（不允許未來）
+
+  function navPrev() { viewOffset--; renderGrid(); renderLog(); }
+  function navNext() { if (viewOffset < 0) { viewOffset++; renderGrid(); renderLog(); } }
   function toggleLog() {
     logOpen = !logOpen;
     const list = document.getElementById('logList');
@@ -862,10 +916,13 @@
 
   function switchView(view) {
     currentView = view;
+    viewOffset = 0;
+    logYear = new Date().getFullYear();
     document.querySelectorAll('.tab').forEach((t,i) => {
       t.classList.toggle('active', ['week','month','quarter','year'][i] === view);
     });
     renderGrid();
+    renderLog();
   }
 
   function getMoodClass(dateStr) {
@@ -875,19 +932,51 @@
   function renderGrid() {
     const container = document.getElementById('gridContainer');
     const label = document.getElementById('gridLabel');
+    const navLabel = document.getElementById('navLabel');
     container.innerHTML = '';
-    if (currentView === 'week') renderWeek(container, label);
-    else if (currentView === 'month') renderMonth(container, label);
-    else if (currentView === 'quarter') renderQuarter(container, label);
-    else renderYear(container, label);
-    renderStats();
+
+    // 計算 referenceDate based on offset
+    const base = new Date();
+    const ref = new Date(base);
+    if (currentView === 'week') {
+      ref.setDate(base.getDate() + viewOffset * 7);
+    } else if (currentView === 'month') {
+      ref.setMonth(base.getMonth() + viewOffset);
+    } else if (currentView === 'quarter') {
+      ref.setMonth(base.getMonth() + viewOffset * 3);
+    } else {
+      ref.setFullYear(base.getFullYear() + viewOffset);
+    }
+
+    // 更新 navLabel
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const navMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if (currentView === 'week') {
+      const s = new Date(ref); s.setDate(ref.getDate() - ref.getDay());
+      const e = new Date(s); e.setDate(s.getDate() + 6);
+      navLabel.textContent = `${navMonths[s.getMonth()]} ${s.getDate()}–${e.getDate()}`;
+    } else if (currentView === 'month') {
+      navLabel.textContent = `${navMonths[ref.getMonth()]} ${ref.getFullYear()}`;
+    } else if (currentView === 'quarter') {
+      const q = Math.floor(ref.getMonth()/3)+1;
+      navLabel.textContent = `Q${q} ${ref.getFullYear()}`;
+    } else {
+      navLabel.textContent = `${ref.getFullYear()}`;
+    }
+
+    if (currentView === 'week') renderWeek(container, label, ref);
+    else if (currentView === 'month') renderMonth(container, label, ref);
+    else if (currentView === 'quarter') renderQuarter(container, label, ref);
+    else renderYear(container, label, ref);
+    renderStats(ref);
   }
 
-  function renderWeek(container, label) {
+  function renderWeek(container, label, ref) {
+    ref = ref || today;
     label.textContent = 'This Week';
     const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
+    const startOfWeek = new Date(ref);
+    startOfWeek.setDate(ref.getDate() - ref.getDay());
 
     // 整排可以左右 scroll，SUN-SAT label 跟圓圈綁在同一個 column
     const scrollRow = document.createElement('div');
@@ -897,7 +986,7 @@
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
       const dateStr = formatDate(d);
-      const isFuture = d > today;
+      const isFuture = d > today; // 未來永遠用真實today
       const isPast = d < today;
 
       // 每天一個 col：label 在上，圓圈在下
@@ -926,12 +1015,13 @@
     container.appendChild(scrollRow);
   }
 
-  function renderMonth(container, label) {
+  function renderMonth(container, label, ref) {
+    ref = ref || today;
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    label.textContent = `${months[today.getMonth()]} ${today.getFullYear()}`;
+    label.textContent = `${months[ref.getMonth()]} ${ref.getFullYear()}`;
 
-    const year = today.getFullYear();
-    const month = today.getMonth();
+    const year = ref.getFullYear();
+    const month = ref.getMonth();
     const daysInMonth = new Date(year, month+1, 0).getDate();
 
     const wrap = document.createElement('div');
@@ -974,10 +1064,11 @@
     container.appendChild(wrap);
   }
 
-  function renderQuarter(container, label) {
-    const quarterStart = Math.floor(today.getMonth() / 3) * 3;
+  function renderQuarter(container, label, ref) {
+    ref = ref || today;
+    const quarterStart = Math.floor(ref.getMonth() / 3) * 3;
     const qNames = ['Q1','Q2','Q3','Q4'];
-    label.textContent = qNames[Math.floor(today.getMonth()/3)];
+    label.textContent = qNames[Math.floor(ref.getMonth()/3)];
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     for (let m = quarterStart; m < quarterStart + 3; m++) {
@@ -988,9 +1079,9 @@
 
       const grid = document.createElement('div');
       grid.className = 'grid';
-      const daysInMonth = new Date(today.getFullYear(), m+1, 0).getDate();
+      const daysInMonth = new Date(ref.getFullYear(), m+1, 0).getDate();
       for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(today.getFullYear(), m, d);
+        const date = new Date(ref.getFullYear(), m, d);
         const dateStr = formatDate(date);
         const isFuture = date > today;
         const isPast = date < today;
@@ -1000,8 +1091,9 @@
     }
   }
 
-  function renderYear(container, label) {
-    label.textContent = `${today.getFullYear()}`;
+  function renderYear(container, label, ref) {
+    ref = ref || today;
+    label.textContent = `${ref.getFullYear()}`;
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     for (let m = 0; m < 12; m++) {
@@ -1012,16 +1104,13 @@
 
       const grid = document.createElement('div');
       grid.className = 'grid';
-      const daysInMonth = new Date(today.getFullYear(), m+1, 0).getDate();
+      const daysInMonth = new Date(ref.getFullYear(), m+1, 0).getDate();
       for (let d = 1; d <= daysInMonth; d++) {
-        const date = new Date(today.getFullYear(), m, d);
+        const date = new Date(ref.getFullYear(), m, d);
         const dateStr = formatDate(date);
         const isFuture = date > today;
         const isPast = date < today;
-        const cell = createCell(dateStr, isFuture, isPast);
-        cell.style.width = '22px';
-        cell.style.height = '22px';
-        grid.appendChild(cell);
+        grid.appendChild(createCell(dateStr, isFuture, isPast));
       }
       container.appendChild(grid);
     }
@@ -1051,11 +1140,12 @@
     return cell;
   }
 
-  function renderStats() {
+  function renderStats(ref) {
+    ref = ref || new Date();
     const bar = document.getElementById('statsBar');
     bar.innerHTML = '';
-    let counts = { happy: 0, sad: 0, neutral: 0, total: 0 };
-    const now = new Date();
+    let counts = { happy: 0, mixed: 0, sad: 0, neutral: 0, total: 0 };
+    const now = ref; // 用 ref 作為當前時間點
     let start;
 
     if (currentView === 'week') {
@@ -1069,7 +1159,8 @@
     }
 
     const startStr = formatDate(start);
-    const nowStr = formatDate(now);
+    const realNow = new Date(); // 真實今天
+    const nowStr = now > realNow ? formatDate(realNow) : formatDate(now);
     Object.entries(moodData).forEach(([date, entry]) => {
       if (date >= startStr && date <= nowStr) { counts[entry.mood]++; counts.total++; }
     });
@@ -1082,11 +1173,14 @@
     // 計算這段時間的總天數（不含未來）
     let totalDays = 0;
     const cur = new Date(start);
-    while (cur <= now) { totalDays++; cur.setDate(cur.getDate()+1); }
+    const realToday = new Date();
+    const endBound = now > realToday ? realToday : now;
+    while (cur <= endBound) { totalDays++; cur.setDate(cur.getDate()+1); }
     const unrecorded = totalDays - counts.total;
 
     const allItems = [
       { key: 'happy', label: '開心', color: '#F6CE83', count: counts.happy },
+      { key: 'mixed', label: '各半', color: '#C17E4F', count: counts.mixed },
       { key: 'sad', label: '不開心', color: '#C06145', count: counts.sad },
       { key: 'neutral', label: '沒感覺', color: '#9F9F9F', count: counts.neutral },
       { key: 'unrecorded', label: '未記錄', color: '#DCE5EF', count: unrecorded }
