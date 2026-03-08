@@ -641,7 +641,12 @@
   <div class="grid-card" style="margin-top:50px;margin-bottom:0;padding-left:30px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <button onclick="toggleLog()" id="logToggleBtn" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);text-decoration:underline;text-underline-offset:3px;padding:0;">Your Recent Life Records Note</button>
-      <span id="logToggleArrow" style="font-size:16px;color:var(--ink);font-weight:700;font-family:monospace;line-height:1;">−</span>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button onclick="exportData()" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;padding:0;text-decoration:underline;text-underline-offset:2px;">匯出</button>
+        <button onclick="importData()" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;padding:0;text-decoration:underline;text-underline-offset:2px;">匯入</button>
+        <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
+        <span id="logToggleArrow" style="font-size:16px;color:var(--ink);font-weight:700;font-family:monospace;line-height:1;">−</span>
+      </div>
     </div>
     <div id="logList" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
   </div>
@@ -701,6 +706,17 @@
     <div class="modal-actions">
       <button class="modal-cancel" onclick="closeModalDirect()">取消</button>
       <button class="modal-save" onclick="saveModal()">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 自訂確認對話框 -->
+<div id="confirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:2000;align-items:center;justify-content:center;">
+  <div style="background:#F3EEE8;border-radius:16px;padding:24px;max-width:320px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+    <div id="confirmMsg" style="font-family:Noto Sans JP,PingFang TC,sans-serif;font-size:13px;color:#4D586F;line-height:1.7;margin-bottom:20px;white-space:pre-line;"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button id="confirmCancel" style="padding:8px 20px;border:1.5px solid #E0D9D0;border-radius:30px;background:#F3EEE8;font-family:Sulphur Point,sans-serif;font-size:13px;color:#4D586F;cursor:pointer;">取消</button>
+      <button id="confirmOk" style="padding:8px 20px;border:none;border-radius:30px;background:#4D586F;font-family:Sulphur Point,sans-serif;font-size:13px;color:#DCE5EF;cursor:pointer;">確定</button>
     </div>
   </div>
 </div>
@@ -916,6 +932,79 @@
     const arrow = document.getElementById('logToggleArrow');
     list.style.display = logOpen ? 'flex' : 'none';
     arrow.textContent = logOpen ? '−' : '+';
+  }
+
+  function showConfirm(msg, onOk, onCancel) {
+    const overlay = document.getElementById('confirmOverlay');
+    document.getElementById('confirmMsg').textContent = msg;
+    overlay.style.display = 'flex';
+    const okBtn = document.getElementById('confirmOk');
+    const cancelBtn = document.getElementById('confirmCancel');
+    const cleanup = () => { overlay.style.display = 'none'; };
+    okBtn.onclick = () => { cleanup(); if (onOk) onOk(); };
+    cancelBtn.onclick = () => { cleanup(); if (onCancel) onCancel(); };
+  }
+
+  function exportData() {
+    const count = Object.keys(moodData).length;
+    if (count === 0) { showConfirm('還沒有任何紀錄可以匯出！', null, null); document.getElementById('confirmCancel').style.display='none'; return; }
+    const json = JSON.stringify(moodData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    const d = new Date();
+    a.download = `mood-data-${formatDate(d)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    showConfirm(`✅ 已匯出 ${count} 筆紀錄！`, null, null); document.getElementById('confirmCancel').style.display='none';
+  }
+
+  function importData() {
+    document.getElementById('importFile').click();
+  }
+
+  function handleImport(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const imported = JSON.parse(evt.target.result);
+        const total = Object.keys(imported).length;
+        const conflicts = Object.keys(imported).filter(d => moodData[d]);
+        const newOnly = total - conflicts.length;
+        let overwrite = false;
+
+        if (conflicts.length > 0) {
+          const msg = `匯入檔案共 ${total} 筆紀錄\n新增 ${newOnly} 筆（不衝突）\n衝突 ${conflicts.length} 筆（已有紀錄）\n\n確定 → 全部覆蓋\n取消 → 只匯入新的`;
+          showConfirm(msg,
+            () => {
+              Object.assign(moodData, imported);
+              saveData(); renderGrid(); renderLog();
+              showConfirm(`✅ 匯入完成！共覆蓋 ${total} 筆紀錄。`, null, null);
+              document.getElementById('confirmCancel').style.display = 'none';
+            },
+            () => {
+              Object.keys(imported).forEach(d => { if (!moodData[d]) moodData[d] = imported[d]; });
+              saveData(); renderGrid(); renderLog();
+              showConfirm(`✅ 匯入完成！新增 ${newOnly} 筆紀錄。`, null, null);
+              document.getElementById('confirmCancel').style.display = 'none';
+            }
+          );
+        } else {
+          Object.assign(moodData, imported);
+          saveData(); renderGrid(); renderLog();
+          showConfirm(`✅ 匯入完成！共新增 ${total} 筆紀錄。`, null, null);
+          document.getElementById('confirmCancel').style.display = 'none';
+        }
+      } catch(err) {
+        showConfirm('匯入失敗，請確認是正確的 JSON 檔案。', null, null); document.getElementById('confirmCancel').style.display='none';
+      }
+      e.target.value = '';
+    };
+    reader.readAsText(file);
   }
 
   function switchView(view) {
