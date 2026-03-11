@@ -61,12 +61,13 @@
   header {
     margin-bottom: 36px;
     display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
     border-bottom: 1px solid rgba(77,88,111,0.2);
     padding-bottom: 20px;
-    gap: 16px;
-    flex-wrap: wrap;
+    gap: 12px;
   }
 
   h1 {
@@ -92,6 +93,7 @@
     gap: 16px;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
   }
 
   .legend-item {
@@ -187,7 +189,7 @@
   .cell.sad { background: var(--sad); }
   .cell.mixed { background: var(--mixed); }
   .cell.neutral { background: var(--neutral); }
-  .cell.today { border-color: #DCE5EF; }
+  .cell.today { border-color: #DCE5EF; border-width: 2.5px; box-shadow: 0 0 0 3px rgba(220,229,239,0.18), 0 0 10px 2px rgba(220,229,239,0.13); }
   .cell.future { background: rgba(220,229,239,0.5); cursor: default; }
 
   .cell-tooltip {
@@ -654,6 +656,11 @@
         <span id="logToggleArrow" style="font-size:16px;color:var(--ink);font-weight:700;font-family:monospace;line-height:1;">−</span>
       </div>
     </div>
+    <div id="logNav" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;min-height:22px;">
+      <button id="logNavPrev" onclick="logNavStep(-1)" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink-light);padding:0 4px;line-height:1;opacity:0.6;">‹</button>
+      <span id="logNavLabel" style="font-family:'Sulphur Point',sans-serif;font-size:10px;letter-spacing:0.08em;color:var(--ink-light);flex:1;text-align:center;"></span>
+      <button id="logNavNext" onclick="logNavStep(1)" style="background:none;border:none;cursor:pointer;font-size:18px;color:var(--ink-light);padding:0 4px;line-height:1;opacity:0.6;">›</button>
+    </div>
     <div id="logList" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;"></div>
   </div>
 
@@ -849,83 +856,121 @@
   let logYear = new Date().getFullYear();
 
   function renderLog() {
-    const list = document.getElementById('logList');
-    if (!list) return;
-    list.innerHTML = '';
-    const moodColors = { happy: '#F6CE83', mixed: '#D39266', sad: '#C06145', neutral: '#9F9F9F' };
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    const realNow = new Date();
+    const nav = document.getElementById('logNav');
+    const label = document.getElementById('logNavLabel');
+    const prevBtn = document.getElementById('logNavPrev');
+    const nextBtn = document.getElementById('logNavNext');
 
-    // 用 viewOffset 計算 ref（跟 renderGrid 一樣的邏輯）
-    const ref = new Date(realNow);
-    if (currentView === 'week') ref.setDate(realNow.getDate() + viewOffset * 7);
-    else if (currentView === 'month') ref.setMonth(realNow.getMonth() + viewOffset);
-    else if (currentView === 'quarter') ref.setMonth(realNow.getMonth() + viewOffset * 3);
-    else ref.setFullYear(realNow.getFullYear() + viewOffset);
-
-    const now = ref > realNow ? realNow : ref; // 不超過今天
-
-    // 依視圖決定 filter 範圍
-    let startStr, endStr;
     if (currentView === 'week') {
-      const s = new Date(ref); s.setDate(ref.getDate() - ref.getDay());
-      startStr = formatDate(s); endStr = formatDate(now);
+      if (nav) nav.style.display = 'none';
+      _renderLogEntries(getLogRange());
+      return;
+    }
+
+    if (nav) nav.style.display = 'flex';
+
+    const now = new Date();
+    const ref = new Date(now);
+    if (currentView === 'month') ref.setMonth(now.getMonth() + viewOffset);
+    else if (currentView === 'quarter') ref.setMonth(now.getMonth() + viewOffset * 3);
+    else ref.setFullYear(now.getFullYear() + viewOffset);
+
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    if (currentView === 'month') {
+      if (label) label.textContent = `${monthNames[ref.getMonth()]} ${ref.getFullYear()}`;
+    } else if (currentView === 'quarter') {
+      const q = Math.floor(ref.getMonth() / 3) + 1;
+      if (label) label.textContent = `Q${q} ${ref.getFullYear()}`;
+    } else {
+      if (label) label.textContent = `${ref.getFullYear()}`;
+    }
+
+    if (nextBtn) nextBtn.style.opacity = viewOffset >= 0 ? '0.2' : '0.6';
+    if (prevBtn) prevBtn.style.opacity = '0.6';
+
+    _renderLogEntries(getLogRange());
+  }
+
+  function logNavStep(dir) {
+    if (dir > 0 && viewOffset >= 0) return;
+    viewOffset += dir;
+    renderGrid();
+    renderLog();
+  }
+
+  function getLogRange() {
+    const now = new Date();
+    const ref = new Date(now);
+    if (currentView === 'month') ref.setMonth(now.getMonth() + viewOffset);
+    else if (currentView === 'quarter') ref.setMonth(now.getMonth() + viewOffset * 3);
+    else if (currentView === 'year') ref.setFullYear(now.getFullYear() + viewOffset);
+
+    const realNow = new Date();
+    let startStr, endStr;
+
+    if (currentView === 'week') {
+      const s = new Date(realNow); s.setDate(realNow.getDate() - realNow.getDay());
+      startStr = formatDate(s); endStr = formatDate(realNow);
     } else if (currentView === 'month') {
       startStr = `${ref.getFullYear()}-${String(ref.getMonth()+1).padStart(2,'0')}-01`;
-      endStr = formatDate(now);
+      const isNow = ref.getFullYear() === realNow.getFullYear() && ref.getMonth() === realNow.getMonth();
+      endStr = isNow ? formatDate(realNow) : formatDate(new Date(ref.getFullYear(), ref.getMonth()+1, 0));
     } else if (currentView === 'quarter') {
       const qs = Math.floor(ref.getMonth()/3)*3;
       startStr = `${ref.getFullYear()}-${String(qs+1).padStart(2,'0')}-01`;
-      endStr = formatDate(now);
+      const qe = new Date(ref.getFullYear(), qs+3, 0);
+      endStr = qe > realNow ? formatDate(realNow) : formatDate(qe);
     } else {
       startStr = `${ref.getFullYear()}-01-01`;
       endStr = ref.getFullYear() === realNow.getFullYear() ? formatDate(realNow) : `${ref.getFullYear()}-12-31`;
     }
+    return { startStr, endStr };
+  }
 
-
+  function _renderLogEntries({ startStr, endStr }) {
+    const list = document.getElementById('logList');
+    if (!list) return;
+    list.innerHTML = '';
+    const moodColors = { happy: '#F6CE83', mixed: '#D39266', sad: '#C06145', neutral: '#9F9F9F' };
+    const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     const entries = Object.entries(moodData)
-      .filter(([d]) => d >= startStr && d <= endStr)
+      .filter(([date]) => date >= startStr && date <= endStr)
       .sort((a, b) => b[0].localeCompare(a[0]));
 
     if (entries.length === 0) {
       const empty = document.createElement('div');
-      empty.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;';
+      empty.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:11px;color:rgba(77,88,111,0.4);padding:8px 0;letter-spacing:0.05em;';
       empty.textContent = 'No records yet';
       list.appendChild(empty);
       return;
     }
 
-    entries.forEach(([dateStr, entry]) => {
-      const [y, m, d] = dateStr.split('-');
-      const dateLabel = `${months[parseInt(m)-1]} ${d}, ${y}`;
-
+    entries.forEach(([date, entry]) => {
+      const [y, m, d] = date.split('-');
+      const label = `${monthNames[parseInt(m)-1]} ${parseInt(d)}, ${y}`;
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(77,88,111,0.08);';
-
+      row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(77,88,111,0.08);';
       const dot = document.createElement('div');
-      dot.style.cssText = `width:10px;height:10px;border-radius:50%;background:${moodColors[entry.mood]};flex-shrink:0;`;
-
+      dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${moodColors[entry.mood] || '#9F9F9F'};flex-shrink:0;margin-top:4px;`;
       const info = document.createElement('div');
-      info.style.cssText = 'display:flex;flex-direction:column;gap:2px;flex:1;';
-
-      const dateTxt = document.createElement('span');
-      dateTxt.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink);letter-spacing:0.04em;';
-      dateTxt.textContent = dateLabel;
-      info.appendChild(dateTxt);
-
-      if (entry.note) {
-        const note = document.createElement('div');
-        note.style.cssText = 'font-family:Noto Sans JP,PingFang TC,sans-serif;font-size:11px;color:var(--ink-light);';
-        note.textContent = entry.note;
-        info.appendChild(note);
+      info.style.cssText = 'flex:1;min-width:0;';
+      const dateEl = document.createElement('div');
+      dateEl.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:10px;color:rgba(77,88,111,0.45);letter-spacing:0.05em;margin-bottom:2px;';
+      dateEl.textContent = label;
+      info.appendChild(dateEl);
+      if (entry.note && entry.note.trim()) {
+        const noteEl = document.createElement('div');
+        noteEl.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:12px;color:rgba(77,88,111,0.7);line-height:1.5;word-break:break-all;';
+        noteEl.textContent = entry.note;
+        info.appendChild(noteEl);
       }
-
       row.appendChild(dot);
       row.appendChild(info);
       list.appendChild(row);
     });
   }
+
 
   let logOpen = true;
   let viewOffset = 0; // 0 = 當前, -1 = 上一個, 1 = 下一個（不允許未來）
@@ -1378,5 +1423,8 @@
   renderGrid();
   renderLog();
 </script>
+  <div style="text-align:center;padding:28px 0 20px;font-family:'Sulphur Point',sans-serif;font-size:11px;color:rgba(80,72,60,0.35);letter-spacing:0.08em;">
+    © 2026 Triple.Cell_illustration — 細胞日常插畫
+  </div>
 </body>
 </html>
