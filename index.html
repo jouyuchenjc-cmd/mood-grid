@@ -1635,7 +1635,7 @@
   }
 
 
-  const BLESSING_CARDS = ["自我察覺，不是場對錯的競賽，只是單純意識到，原來這一個的自己，是這個樣子", "不開心的存在，是讓我們能看見開心的樣貌，也讓我們知道有哪些，是未來想選擇不重複的", "意識到自己不喜歡的自己，需要勇氣。願意承認並接受各種樣貌的自己，更是一場包容練習", "慣性能被持續，是因為我們總能從中得到什麼，所以要讓慣性產生變動，或許要先問的是我願意放棄它所帶來的好嗎？", "想重複裡得到不同的結果，那就起身去，把重複切成絲，試著尋找能夠改變的那一條絲", "練習把那些自己能做不同選擇的能力拿回來吧！或許會發現，原來每件事都擁有更多的可能", "如果做不到全然相信，宇宙的早已安排，那就讓我們一起練習讓自己不後悔每個當下的選擇"];
+  const BLESSING_CARDS = ["自我察覺，不是場對錯的競賽，只是單純意識到，原來這一個的自己，是這個樣子", "不開心的存在，是讓我們能看見開心的樣貌，也讓我們知道有哪些，是未來想選擇不重複的", "意識到自己不喜歡的自己，需要勇氣。願意承認並接受各種樣貌的自己，更是一場包容練習", "慣性能被持續，是因為我們總能從中得到什麼，所以要讓慣性產生變動，或許要先問的是我願意放棄它所帶來的好嗎？", "想重複裡得到不同的結果，那就起身去，把重複切成絲，試著尋找能夠改變的那一條絲", "練習把那些自己能做不同選擇的能力拿回來吧！或許會發現，原來每件事都擁有更多的可能", "如果做不到全然相信，宇宙的早已安排，\n那就讓我們一起練習\n讓自己不後悔每個當下的選擇"];
 
   const BLESSING_SVGS = [
   `<svg id="card-illus-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
@@ -2381,22 +2381,25 @@
       ctx.fillStyle = '#4D586F';
       ctx.textBaseline = 'top';
       const maxW = W - PAD * 2;
-      const chars = Array.from(text);
+      const segments = text.split('\\n');
       const lines = [];
-      let line = '';
-      for (let i = 0; i < chars.length; i++) {
-        const ch = chars[i];
-        const nextCh = chars[i+1] || '';
-        line += ch;
-        const nextW = ctx.measureText(line + nextCh).width;
-        if (NO_START.has(nextCh)) continue;
-        if (PUNCTS.has(ch) && ctx.measureText(line).width > maxW * 0.38) {
-          lines.push(line); line = '';
-        } else if (nextW > maxW && line) {
-          lines.push(line); line = '';
+      for (const seg of segments) {
+        const chars = Array.from(seg);
+        let line = '';
+        for (let i = 0; i < chars.length; i++) {
+          const ch = chars[i];
+          const nextCh = chars[i+1] || '';
+          line += ch;
+          const nextW = ctx.measureText(line + nextCh).width;
+          if (NO_START.has(nextCh)) continue;
+          if (PUNCTS.has(ch) && ctx.measureText(line).width > maxW * 0.38) {
+            lines.push(line); line = '';
+          } else if (nextW > maxW && line) {
+            lines.push(line); line = '';
+          }
         }
+        if (line) lines.push(line);
       }
-      if (line) lines.push(line);
 
       lines.forEach((l, i) => {
         const lw = ctx.measureText(l).width;
