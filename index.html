@@ -661,21 +661,23 @@
     const container = document.getElementById('chartContainer');
     container.innerHTML = '';
 
-    // 更新 navLabel
+    // 更新 navLabel 和 gridLabel
     const _navLabel = document.getElementById('navLabel');
-    if (_navLabel) {
-      const _now = new Date();
-      const _base = new Date(_now.getFullYear(), _now.getMonth(), 1);
-      if (currentView === 'quarter') {
-        const _curQ = Math.floor(_now.getMonth()/3);
-        const _tQ = _curQ + viewOffset;
-        const _yearsOff = Math.floor(_tQ/4);
-        const _qInYear = ((_tQ%4)+4)%4;
-        const _qYear = _now.getFullYear() + _yearsOff;
-        _navLabel.textContent = `Q${_qInYear+1} ${_qYear}`;
-      } else if (currentView === 'year') {
-        _navLabel.textContent = `${_now.getFullYear() + viewOffset}`;
-      }
+    const _gridLabel = document.getElementById('gridLabel');
+    const _now = new Date();
+    if (currentView === 'quarter') {
+      const _curQ = Math.floor(_now.getMonth()/3);
+      const _tQ = _curQ + viewOffset;
+      const _yearsOff = Math.floor(_tQ/4);
+      const _qInYear = ((_tQ%4)+4)%4;
+      const _qYear = _now.getFullYear() + _yearsOff;
+      const _qLabel = `Q${_qInYear+1}`;
+      if (_navLabel) _navLabel.textContent = `${_qLabel} ${_qYear}`;
+      if (_gridLabel) _gridLabel.textContent = _qLabel;
+    } else if (currentView === 'year') {
+      const _yr = `${_now.getFullYear() + viewOffset}`;
+      if (_navLabel) _navLabel.textContent = _yr;
+      if (_gridLabel) _gridLabel.textContent = _yr;
     }
 
     const months = getMonthsForView();
@@ -686,7 +688,8 @@
       neutral:    'rgba(180,190,200,0.8)',
       unrecorded: 'rgba(220,229,239,0.2)',
     };
-    const LABELS = { happy:'開心', sad:'不開心', neutral:'沒感覺', unrecorded:'未記錄' };
+    const _CL = (typeof getLang === 'function') ? getLang() : { happy:'開心', sad:'不開心', neutral:'沒感覺', unrecorded:'未記錄' };
+    const LABELS = { happy:_CL.happy, sad:_CL.sad, neutral:_CL.neutral, unrecorded:_CL.unrecorded };
 
     // Build data per month
     const data = { happy:[], sad:[], neutral:[], unrecorded:[] };
@@ -907,19 +910,23 @@
       <h1>The Colour of Your Day.</h1>
       <div class="subtitle" id="currentYear"></div>
     </div>
-    <div class="legend">
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--happy)"></div>開心
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <div class="legend">
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--happy)"></div>開心
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--mixed)"></div>各半
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--sad)"></div>不開心
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--neutral)"></div>沒感覺
+        </div>
       </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--mixed)"></div>各半
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--sad)"></div>不開心
-      </div>
-      <div class="legend-item">
-        <div class="legend-dot" style="background:var(--neutral)"></div>沒感覺
-      </div>
+      <button id="langToggleBtn" onclick="toggleLang()" style="background:none;border:1px solid rgba(77,88,111,0.3);border-radius:20px;padding:4px 12px;font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.1em;color:#4D586F;cursor:pointer;flex-shrink:0;margin-left:8px;display:inline-flex;align-items:center;justify-content:center;line-height:1;display:inline-flex;align-items:center;justify-content:center;line-height:1;height:26px;">EN</button>
     </div>
   </header>
 
@@ -1579,7 +1586,7 @@
         const entry = moodData[dateStr];
         const tip = document.createElement('div');
         tip.className = 'cell-tooltip';
-        tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : (mood ? '' : ' 點擊補填')}`;
+        tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : (mood ? '' : (typeof getLang==="function" ? getLang().clickToFill : ' 點擊補填'))}`;
         cell.appendChild(tip);
         if (dateStr !== todayStr) cell.onclick = () => openModal(dateStr);
       }
@@ -1659,7 +1666,7 @@
     const entry = moodData[dateStr];
     const tip = document.createElement('div');
     tip.className = 'cell-tooltip';
-    tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : (mood ? '' : ' 點擊補填')}`;
+    tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : (mood ? '' : (typeof getLang==="function" ? getLang().clickToFill : ' 點擊補填'))}`;
     cell.appendChild(tip);
 
     if (dateStr !== todayStr) {
@@ -1688,7 +1695,19 @@
 
     const startStr = formatDate(start);
     const realNow = new Date(); // 真實今天
-    const nowStr = now > realNow ? formatDate(realNow) : formatDate(now);
+    // 計算這個期間的結束日
+    let periodEnd;
+    if (currentView === 'week') {
+      periodEnd = new Date(start); periodEnd.setDate(start.getDate() + 6);
+    } else if (currentView === 'month') {
+      periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    } else if (currentView === 'quarter') {
+      const qEndMonth = Math.floor(now.getMonth()/3)*3 + 3;
+      periodEnd = new Date(now.getFullYear(), qEndMonth, 0);
+    } else {
+      periodEnd = new Date(now.getFullYear(), 11, 31);
+    }
+    const nowStr = periodEnd > realNow ? formatDate(realNow) : formatDate(periodEnd);
     Object.entries(moodData).forEach(([date, entry]) => {
       if (date >= startStr && date <= nowStr) { counts[entry.mood]++; counts.total++; }
     });
@@ -1703,16 +1722,18 @@
     let totalDays = 0;
     const cur = new Date(start);
     const realToday = new Date();
-    const endBound = now > realToday ? realToday : now;
+    // 用 nowStr 對應的日期作為結束邊界
+    const endBound = new Date(nowStr);
     while (cur <= endBound) { totalDays++; cur.setDate(cur.getDate()+1); }
     const unrecorded = totalDays - counts.total;
 
+    const _L = (typeof getLang === "function") ? getLang() : { happy:"開心", mixed:"各半", sad:"不開心", neutral:"沒感覺", unrecorded:"未記錄" };
     const allItems = [
-      { key: 'happy', label: '開心', color: '#F6CE83', count: counts.happy },
-      { key: 'mixed', label: '各半', color: '#D39266', count: counts.mixed },
-      { key: 'sad', label: '不開心', color: '#C06145', count: counts.sad },
-      { key: 'neutral', label: '沒感覺', color: '#9F9F9F', count: counts.neutral },
-      { key: 'unrecorded', label: '未記錄', color: '#DCE5EF', count: unrecorded }
+      { key: 'happy', label: _L.happy, color: '#F6CE83', count: counts.happy },
+      { key: 'mixed', label: _L.mixed, color: '#D39266', count: counts.mixed },
+      { key: 'sad', label: _L.sad, color: '#C06145', count: counts.sad },
+      { key: 'neutral', label: _L.neutral, color: '#9F9F9F', count: counts.neutral },
+      { key: 'unrecorded', label: _L.unrecorded, color: '#DCE5EF', count: unrecorded }
     ];
 
     // 共用 10 格，每格代表一個類別的比例
@@ -1751,7 +1772,7 @@
       dot.style.cssText = `width:7px;height:7px;border-radius:2px;background:${color};flex-shrink:0;`;
       const txt = document.createElement('div');
       txt.style.cssText = 'font-family:Sulphur Point,sans-serif;font-size:10px;color:rgba(220,229,239,0.55);letter-spacing:0.04em;white-space:nowrap;';
-      txt.innerHTML = `<span style="color:rgba(220,229,239,0.85)">${label}</span> ${count}天·${pct}%`;
+      txt.innerHTML = `<span style="color:rgba(220,229,239,0.85)">${label}</span> ${count}${(typeof currentLang!=="undefined"&&currentLang==="en")?"d·":"天·"}${pct}%`;
       item.appendChild(dot);
       item.appendChild(txt);
       legend.appendChild(item);
@@ -1802,7 +1823,47 @@
   }
 
 
-  const BLESSING_CARDS = ["自我察覺，不是場對錯的競賽，只是單純意識到，原來這一個的自己，是這個樣子", "不開心的存在，是讓我們能看見開心的樣貌，也讓我們知道有哪些，是未來想選擇不重複的", "意識到自己不喜歡的自己，需要勇氣。願意承認並接受各種樣貌的自己，更是一場包容練習", "慣性能被持續，是因為我們總能從中得到什麼，所以要讓慣性產生變動，或許要先問的是我願意放棄它所帶來的好嗎？", "想重複裡得到不同的結果，那就起身去，把重複切成絲，試著尋找能夠改變的那一條絲", "練習把那些自己能做不同選擇的能力拿回來吧！或許會發現，原來每件事都擁有更多的可能", "如果做不到全然相信，宇宙的早已安排，\n那就讓我們一起練習，讓自己不後悔每個當下的選擇"];
+  const BLESSING_CARDS_ZH = ["自我察覺，不是場對錯的競賽，只是單純意識到，原來這一個的自己，是這個樣子", "不開心的存在，是讓我們能看見開心的樣貌，也讓我們知道有哪些，是未來想選擇不重複的", "意識到自己不喜歡的自己，需要勇氣。願意承認並接受各種樣貌的自己，更是一場包容練習", "慣性能被持續，是因為我們總能從中得到什麼，所以要讓慣性產生變動，或許要先問的是我願意放棄它所帶來的好嗎？", "想重複裡得到不同的結果，那就起身去，把重複切成絲，試著尋找能夠改變的那一條絲", "練習把那些自己能做不同選擇的能力拿回來吧！或許會發現，原來每件事都擁有更多的可能", "如果做不到全然相信，宇宙的早已安排，\n那就讓我們一起練習，讓自己不後悔每個當下的選擇"];
+  const BLESSING_CARDS_EN = ["No matter what you notice through self-awareness, there is no right or wrong. It's simply a way of seeing — this is a part of who I am.", "Negative feelings are actually a gift. They show us what happiness looks like, and remind us what we'd rather not carry into the future.", "Realising the parts of ourselves we don't like takes courage. Being willing to see and accept every side of who we are — that's a practice of tolerance.", "The reason a habit keeps going is because we always get something from it. So if we want it to change, perhaps the real question to ask first is: am I willing to give up what it brings to me?", "If you want something different from a pattern that you keep repeating, take action to break it. Look for a tiny, simple part where we could make a small change.", "Why not reclaim the power to make your own choices — just for yourself? Once you start, you might find there are far more possibilities than you thought.", "If it's hard to fully trust that the universe has it all planned out, perhaps we could practise something simpler together: making each choice in a way we won't regret, and start from this moment."];
+  var currentLang = (typeof localStorage !== "undefined" ? localStorage.getItem("moodLang") : null) || "zh";
+  let BLESSING_CARDS = BLESSING_CARDS_ZH;
+
+  const LANG_ZH = {
+    happy: '開心', mixed: '各半', sad: '不開心', neutral: '沒感覺',
+    unrecorded: '未記錄',
+    tabWeek: '週', tabMonth: '月', tabQuarter: '季', tabYear: '年',
+    recordToday: '記錄今天',
+    blessingBtn: '♥\uFE0E 一封信，給今天的你 ♥\uFE0E',
+    exportBtn: '匯出', importBtn: '匯入',
+    modalTitle: '補填這天的心情',
+    modalSave: '儲存', modalClear: '清除',
+    modalNote: '寫下今天的一些什麼...',
+    streakText: n => `✦ 已經上色了 ${n} 天 ✦`,
+    clickToFill: ' 點擊補填',
+    downloadCard: '↓ 歡迎下載這張卡片',
+    chartLabel: { happy:'開心', sad:'不開心', neutral:'沒感覺', unrecorded:'未記錄' },
+    blessingCards: BLESSING_CARDS_ZH,
+  };
+
+  const LANG_EN = {
+    happy: 'Happy', mixed: 'Half', sad: 'Sad', neutral: 'Blank',
+    unrecorded: 'No record',
+    tabWeek: 'W', tabMonth: 'M', tabQuarter: 'Q', tabYear: 'Y',
+    recordToday: 'Save my day',
+    blessingBtn: '♥\uFE0E A note, just for today ♥\uFE0E',
+    exportBtn: 'Export', importBtn: 'Import',
+    modalTitle: 'How was this day?',
+    modalSave: 'Save', modalClear: 'Clear',
+    modalNote: 'Write something about today...',
+    streakText: n => `✦ ${n} days coloured ✦`,
+    clickToFill: ' tap to fill',
+    downloadCard: '↓ Download this card',
+    chartLabel: { happy:'Happy', sad:'Sad', neutral:'Blank', unrecorded:'No record' },
+    blessingCards: BLESSING_CARDS_EN,
+  };
+
+  currentLang = localStorage.getItem('moodLang') || 'zh';
+  function getLang() { return currentLang === 'en' ? LANG_EN : LANG_ZH; }
 
   const BLESSING_SVGS = [
   `<svg id="card-illus-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
@@ -2431,6 +2492,11 @@
     while (BLESSING_CARDS.length > 1 && idx === _lastBlessingIdx);
     _lastBlessingIdx = idx;
     document.getElementById('blessingText').textContent = BLESSING_CARDS[idx];
+    const _dlBtn = document.querySelector('[onclick="saveCardAsImage()"]');
+    if (_dlBtn) _dlBtn.textContent = (typeof getLang === 'function' ? getLang() : {downloadCard:'↓ 歡迎下載這張卡片'}).downloadCard;
+    document.getElementById('blessingText').style.fontFamily = currentLang === 'en'
+      ? "'Sulphur Point', sans-serif"
+      : "'Noto Sans TC', 'PingFang TC', sans-serif";
     const illus = document.getElementById('blessingIllustration');
     if (illus) {
       illus.style.display = 'flex';
@@ -2544,7 +2610,9 @@
       const PUNCTS = new Set(['，','。','！','？','：','；','…','、']);
       const NO_START = new Set(['，','。','！','？','：','；','…','、','）',')','」','』']);
       const FONT_SIZE = 34, LINE_H = 58, PAD = 100;
-      ctx.font = `${FONT_SIZE}px "Noto Sans TC", "PingFang TC", sans-serif`;
+      ctx.font = currentLang === 'en'
+        ? `${FONT_SIZE}px "Sulphur Point", sans-serif`
+        : `${FONT_SIZE}px "Noto Sans TC", "PingFang TC", sans-serif`;
       ctx.fillStyle = '#4D586F';
       ctx.textBaseline = 'top';
       const maxW = W - PAD * 2;
@@ -2593,13 +2661,13 @@
       link.download = 'colour-of-your-day-' + new Date().toISOString().slice(0,10) + '.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
-      if (btn) btn.textContent = '✓ 已儲存';
+      if (btn) btn.textContent = currentLang === 'en' ? '✓ Saved' : '✓ 已儲存';
       setTimeout(() => { if (btn) btn.textContent = origText; }, 2000);
 
     } catch(e) {
       if (btn) btn.textContent = origText;
       console.error(e);
-      alert('儲存失敗，請截圖代替 🙏');
+      alert(currentLang === 'en' ? 'Save failed, please screenshot instead 🙏' : '儲存失敗，請截圖代替 🙏');
     }
   }
 
@@ -2651,21 +2719,23 @@
     const container = document.getElementById('chartContainer');
     container.innerHTML = '';
 
-    // 更新 navLabel
+    // 更新 navLabel 和 gridLabel
     const _navLabel = document.getElementById('navLabel');
-    if (_navLabel) {
-      const _now = new Date();
-      const _base = new Date(_now.getFullYear(), _now.getMonth(), 1);
-      if (currentView === 'quarter') {
-        const _curQ = Math.floor(_now.getMonth()/3);
-        const _tQ = _curQ + viewOffset;
-        const _yearsOff = Math.floor(_tQ/4);
-        const _qInYear = ((_tQ%4)+4)%4;
-        const _qYear = _now.getFullYear() + _yearsOff;
-        _navLabel.textContent = `Q${_qInYear+1} ${_qYear}`;
-      } else if (currentView === 'year') {
-        _navLabel.textContent = `${_now.getFullYear() + viewOffset}`;
-      }
+    const _gridLabel = document.getElementById('gridLabel');
+    const _now = new Date();
+    if (currentView === 'quarter') {
+      const _curQ = Math.floor(_now.getMonth()/3);
+      const _tQ = _curQ + viewOffset;
+      const _yearsOff = Math.floor(_tQ/4);
+      const _qInYear = ((_tQ%4)+4)%4;
+      const _qYear = _now.getFullYear() + _yearsOff;
+      const _qLabel = `Q${_qInYear+1}`;
+      if (_navLabel) _navLabel.textContent = `${_qLabel} ${_qYear}`;
+      if (_gridLabel) _gridLabel.textContent = _qLabel;
+    } else if (currentView === 'year') {
+      const _yr = `${_now.getFullYear() + viewOffset}`;
+      if (_navLabel) _navLabel.textContent = _yr;
+      if (_gridLabel) _gridLabel.textContent = _yr;
     }
 
     const months = getMonthsForView();
@@ -2676,7 +2746,8 @@
       neutral:    'rgba(180,190,200,0.8)',
       unrecorded: 'rgba(220,229,239,0.2)',
     };
-    const LABELS = { happy:'開心', sad:'不開心', neutral:'沒感覺', unrecorded:'未記錄' };
+    const _CL = (typeof getLang === 'function') ? getLang() : { happy:'開心', sad:'不開心', neutral:'沒感覺', unrecorded:'未記錄' };
+    const LABELS = { happy:_CL.happy, sad:_CL.sad, neutral:_CL.neutral, unrecorded:_CL.unrecorded };
 
     // Build data per month
     const data = { happy:[], sad:[], neutral:[], unrecorded:[] };
@@ -2797,6 +2868,84 @@
         navigator.serviceWorker.register('./sw.js').catch(() => {});
       });
     }
+  
+  // ── i18n ──
+
+  function applyLang() {
+    const L = getLang();
+    // legend — 保留 dot，只換文字節點
+    const legendItems = document.querySelectorAll('.legend-item');
+    const legendKeys = ['happy','mixed','sad','neutral'];
+    legendItems.forEach((el, i) => {
+      const dot = el.querySelector('.legend-dot');
+      // 清掉所有文字節點，保留 dot
+      Array.from(el.childNodes).forEach(n => { if (n.nodeType === 3) n.remove(); });
+      el.appendChild(document.createTextNode(L[legendKeys[i]]));
+    });
+    // tabs
+    const tabs = document.querySelectorAll('.tab');
+    const tabKeys = ['tabWeek','tabMonth','tabQuarter','tabYear'];
+    tabs.forEach((t, i) => { t.textContent = L[tabKeys[i]]; });
+    // mood buttons (check-in card) — id: btn-happy, btn-mixed, btn-sad, btn-neutral
+    [['btn-happy','happy'],['btn-mixed','mixed'],['btn-sad','sad'],['btn-neutral','neutral']].forEach(([id,key]) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      const swatch = btn.querySelector('.mood-swatch');
+      Array.from(btn.childNodes).forEach(n => { if (n.nodeType === 3) n.remove(); });
+      btn.appendChild(document.createTextNode(L[key]));
+    });
+    // modal mood buttons — id: mbtn-happy, etc.
+    [['mbtn-happy','happy'],['mbtn-mixed','mixed'],['mbtn-sad','sad'],['mbtn-neutral','neutral']].forEach(([id,key]) => {
+      const btn = document.getElementById(id);
+      if (!btn) return;
+      Array.from(btn.childNodes).forEach(n => { if (n.nodeType === 3) n.remove(); });
+      btn.appendChild(document.createTextNode(L[key]));
+    });
+    // record button
+    const recordBtn = document.querySelector('[onclick="saveToday()"]');
+    if (recordBtn) recordBtn.textContent = L.recordToday;
+    // blessing button
+    const blessingBtn = document.querySelector('[onclick="openBlessingCard()"]');
+    if (blessingBtn) blessingBtn.innerHTML = L.blessingBtn;
+    // export / import
+    const exportBtn = document.querySelector('[onclick="exportData()"]');
+    if (exportBtn) exportBtn.textContent = L.exportBtn;
+    const importBtn = document.querySelector('[onclick="importData()"]');
+    if (importBtn) importBtn.textContent = L.importBtn;
+    // modal title / save / clear
+    const modalTitle = document.querySelector('.modal-title');
+    if (modalTitle) modalTitle.textContent = L.modalTitle;
+    const modalSave = document.querySelector('.modal-save');
+    if (modalSave) modalSave.textContent = L.modalSave;
+    const modalClear = document.querySelector('.modal-clear');
+    if (modalClear) modalClear.textContent = L.modalClear;
+    // textarea placeholders
+    const noteInput = document.getElementById('noteInput');
+    if (noteInput) noteInput.placeholder = L.modalNote;
+    const modalNote = document.getElementById('modalNote');
+    if (modalNote) modalNote.placeholder = currentLang === 'en' ? 'Notes (optional)' : '備注（可以不填）';
+    // streak
+    const total = Object.keys(moodData).length;
+    const streakEl = document.getElementById('streakText');
+    if (streakEl && total > 0) streakEl.textContent = L.streakText(total);
+    // download btn
+    const dlBtn = document.querySelector('[onclick="saveCardAsImage()"]');
+    if (dlBtn) dlBtn.textContent = L.downloadCard;
+    // lang toggle btn text
+    const langBtn = document.getElementById('langToggleBtn');
+    if (langBtn) langBtn.textContent = currentLang === 'zh' ? 'EN' : '中';
+    // blessing cards
+    BLESSING_CARDS = L.blessingCards;
+  }
+
+  function toggleLang() {
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    localStorage.setItem('moodLang', currentLang);
+    applyLang();
+  }
+
+  window.addEventListener('load', () => { applyLang(); });
+
   </script>
 </body>
 </html>
