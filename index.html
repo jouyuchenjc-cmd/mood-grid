@@ -637,9 +637,14 @@
     const months = [];
     if (currentView === 'quarter') {
       // current quarter: 3 months
-      const qStart = Math.floor(now.getMonth() / 3) * 3 + (viewOffset * 3);
+      const _curQ = Math.floor(now.getMonth()/3);
+      const _tQ = _curQ + viewOffset;
+      const _yearsOff1 = Math.floor(_tQ / 4);
+      const _qInYear1 = ((_tQ % 4) + 4) % 4;
+      const _qYear = now.getFullYear() + _yearsOff1;
+      const qStart = _qInYear1 * 3;
       for (let i = 0; i < 3; i++) {
-        const d = new Date(now.getFullYear(), qStart + i, 1);
+        const d = new Date(_qYear, qStart + i, 1);
         months.push({ year: d.getFullYear(), month: d.getMonth() });
       }
     } else {
@@ -655,6 +660,23 @@
   function renderChart() {
     const container = document.getElementById('chartContainer');
     container.innerHTML = '';
+
+    // 更新 navLabel
+    const _navLabel = document.getElementById('navLabel');
+    if (_navLabel) {
+      const _now = new Date();
+      const _base = new Date(_now.getFullYear(), _now.getMonth(), 1);
+      if (currentView === 'quarter') {
+        const _curQ = Math.floor(_now.getMonth()/3);
+        const _tQ = _curQ + viewOffset;
+        const _yearsOff = Math.floor(_tQ/4);
+        const _qInYear = ((_tQ%4)+4)%4;
+        const _qYear = _now.getFullYear() + _yearsOff;
+        _navLabel.textContent = `Q${_qInYear+1} ${_qYear}`;
+      } else if (currentView === 'year') {
+        _navLabel.textContent = `${_now.getFullYear() + viewOffset}`;
+      }
+    }
 
     const months = getMonthsForView();
     const MOODS = ['happy','sad','neutral','unrecorded'];
@@ -872,7 +894,10 @@
 </svg>
     </div>
     <div style="text-align:center;line-height:1.8;">
-      <div style="font-family:'Sulphur Point',sans-serif;font-size:13px;letter-spacing:0.12em;color:#4D586F;">Triple.Cell_Illustration &nbsp;·&nbsp; 細胞日常</div>
+      <div style="text-align:center;">
+        <div style="font-family:'Sulphur Point',sans-serif;font-size:13px;letter-spacing:0.12em;color:#4D586F;">Triple.Cell _ Illustration</div>
+        <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:12px;letter-spacing:0.08em;color:#4D586F;margin-top:5px;">細胞日常插畫</div>
+      </div>
     </div>
   </div>  </div>
 
@@ -1183,7 +1208,13 @@
     const now = new Date();
     const ref = new Date(now);
     if (currentView === 'month') ref.setMonth(now.getMonth() + viewOffset);
-    else if (currentView === 'quarter') ref.setMonth(now.getMonth() + viewOffset * 3);
+    else if (currentView === 'quarter') {
+      const curQ2 = Math.floor(now.getMonth() / 3);
+      const targetQ2 = curQ2 + viewOffset;
+      const yearsOff2 = Math.floor(targetQ2 / 4);
+      const qInYear2 = ((targetQ2 % 4) + 4) % 4;
+      ref.setFullYear(now.getFullYear() + yearsOff2); ref.setMonth(qInYear2 * 3);
+    }
     else ref.setFullYear(now.getFullYear() + viewOffset);
 
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1211,9 +1242,15 @@
 
   function getLogRange() {
     const now = new Date();
-    const ref = new Date(now);
+    const ref = new Date(now.getFullYear(), now.getMonth(), 1);
     if (currentView === 'month') ref.setMonth(now.getMonth() + viewOffset);
-    else if (currentView === 'quarter') ref.setMonth(now.getMonth() + viewOffset * 3);
+    else if (currentView === 'quarter') {
+      const curQ = Math.floor(now.getMonth() / 3);
+      const targetQ = curQ + viewOffset;
+      const targetYear = now.getFullYear() + Math.floor(targetQ / 4) + (targetQ < 0 ? -1 : 0);
+      const targetMonth = ((targetQ % 4) + 4) % 4 * 3;
+      ref.setFullYear(targetYear); ref.setMonth(targetMonth);
+    }
     else if (currentView === 'year') ref.setFullYear(now.getFullYear() + viewOffset);
 
     const realNow = new Date();
@@ -1286,8 +1323,8 @@
   let logOpen = true;
   let viewOffset = 0; // 0 = 當前, -1 = 上一個, 1 = 下一個（不允許未來）
 
-  function navPrev() { viewOffset--; renderGrid(); renderLog(); updateNavBtns(); }
-  function navNext() { if (viewOffset < 0) { viewOffset++; renderGrid(); renderLog(); } updateNavBtns(); }
+  function navPrev() { viewOffset--; renderGrid(); renderLog(); if (typeof chartMode !== 'undefined' && chartMode) renderChart(); updateNavBtns(); }
+  function navNext() { if (viewOffset < 0) { viewOffset++; renderGrid(); renderLog(); if (typeof chartMode !== 'undefined' && chartMode) renderChart(); } updateNavBtns(); }
 
   function updateNavBtns() {
     const prev = document.getElementById('navPrevBtn');
@@ -1421,13 +1458,18 @@
 
     // 計算 referenceDate based on offset
     const base = new Date();
-    const ref = new Date(base);
+    const ref = new Date(base.getFullYear(), base.getMonth(), 1);
     if (currentView === 'week') {
       ref.setDate(base.getDate() + viewOffset * 7);
     } else if (currentView === 'month') {
       ref.setMonth(base.getMonth() + viewOffset);
     } else if (currentView === 'quarter') {
-      ref.setMonth(base.getMonth() + viewOffset * 3);
+      const curQ = Math.floor(base.getMonth() / 3);
+      const targetQ = curQ + viewOffset;
+      const yearsOff = Math.floor(targetQ / 4);
+      const qInYear = ((targetQ % 4) + 4) % 4;
+      ref.setFullYear(base.getFullYear() + yearsOff);
+      ref.setMonth(qInYear * 3);
     } else {
       ref.setFullYear(base.getFullYear() + viewOffset);
     }
@@ -2585,9 +2627,14 @@
     const months = [];
     if (currentView === 'quarter') {
       // current quarter: 3 months
-      const qStart = Math.floor(now.getMonth() / 3) * 3 + (viewOffset * 3);
+      const _curQ = Math.floor(now.getMonth()/3);
+      const _tQ = _curQ + viewOffset;
+      const _yearsOff1 = Math.floor(_tQ / 4);
+      const _qInYear1 = ((_tQ % 4) + 4) % 4;
+      const _qYear = now.getFullYear() + _yearsOff1;
+      const qStart = _qInYear1 * 3;
       for (let i = 0; i < 3; i++) {
-        const d = new Date(now.getFullYear(), qStart + i, 1);
+        const d = new Date(_qYear, qStart + i, 1);
         months.push({ year: d.getFullYear(), month: d.getMonth() });
       }
     } else {
@@ -2603,6 +2650,23 @@
   function renderChart() {
     const container = document.getElementById('chartContainer');
     container.innerHTML = '';
+
+    // 更新 navLabel
+    const _navLabel = document.getElementById('navLabel');
+    if (_navLabel) {
+      const _now = new Date();
+      const _base = new Date(_now.getFullYear(), _now.getMonth(), 1);
+      if (currentView === 'quarter') {
+        const _curQ = Math.floor(_now.getMonth()/3);
+        const _tQ = _curQ + viewOffset;
+        const _yearsOff = Math.floor(_tQ/4);
+        const _qInYear = ((_tQ%4)+4)%4;
+        const _qYear = _now.getFullYear() + _yearsOff;
+        _navLabel.textContent = `Q${_qInYear+1} ${_qYear}`;
+      } else if (currentView === 'year') {
+        _navLabel.textContent = `${_now.getFullYear() + viewOffset}`;
+      }
+    }
 
     const months = getMonthsForView();
     const MOODS = ['happy','sad','neutral','unrecorded'];
