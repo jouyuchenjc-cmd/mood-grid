@@ -705,6 +705,7 @@
         const mood = moodData[dateStr]?.mood || '';
         if (mood === 'happy') counts.happy++;
         else if (mood === 'sad') counts.sad++;
+        else if (mood === 'mixed') { counts.happy += 0.5; counts.sad += 0.5; }
         else if (mood === 'neutral') counts.neutral++;
         else counts.unrecorded++;
       }
@@ -2763,6 +2764,7 @@
         const mood = moodData[dateStr]?.mood || '';
         if (mood === 'happy') counts.happy++;
         else if (mood === 'sad') counts.sad++;
+        else if (mood === 'mixed') { counts.happy += 0.5; counts.sad += 0.5; }
         else if (mood === 'neutral') counts.neutral++;
         else counts.unrecorded++;
       }
