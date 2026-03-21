@@ -1837,7 +1837,7 @@
     blessingBtn: '♥\uFE0E 一封信，給今天的你 ♥\uFE0E',
     exportBtn: '匯出', importBtn: '匯入',
     modalTitle: '補填這天的心情',
-    modalSave: '儲存', modalClear: '清除',
+    modalSave: '儲存', modalClear: '清除', modalCancel: '取消',
     modalNote: '寫下今天的一些什麼...',
     streakText: n => `✦ 已經上色了 ${n} 天 ✦`,
     clickToFill: ' 點擊補填',
@@ -1854,7 +1854,7 @@
     blessingBtn: '♥\uFE0E A note, just for today ♥\uFE0E',
     exportBtn: 'Export', importBtn: 'Import',
     modalTitle: 'How was this day?',
-    modalSave: 'Save', modalClear: 'Clear',
+    modalSave: 'Save', modalClear: 'Clear', modalCancel: 'Cancel',
     modalNote: 'Write something about today...',
     streakText: n => `✦ ${n} days coloured ✦`,
     clickToFill: ' tap to fill',
@@ -2921,6 +2921,8 @@
     if (modalSave) modalSave.textContent = L.modalSave;
     const modalClear = document.querySelector('.modal-clear');
     if (modalClear) modalClear.textContent = L.modalClear;
+    const modalCancel = document.querySelector('.modal-cancel');
+    if (modalCancel) modalCancel.textContent = L.modalCancel;
     // textarea placeholders
     const noteInput = document.getElementById('noteInput');
     if (noteInput) noteInput.placeholder = L.modalNote;
