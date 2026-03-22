@@ -705,7 +705,6 @@
         const mood = moodData[dateStr]?.mood || '';
         if (mood === 'happy') counts.happy++;
         else if (mood === 'sad') counts.sad++;
-        else if (mood === 'mixed') { counts.happy += 0.5; counts.sad += 0.5; }
         else if (mood === 'neutral') counts.neutral++;
         else counts.unrecorded++;
       }
@@ -928,6 +927,7 @@
         </div>
       </div>
       <button id="langToggleBtn" onclick="toggleLang()" style="background:none;border:1px solid rgba(77,88,111,0.3);border-radius:20px;padding:4px 12px;font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.1em;color:#4D586F;cursor:pointer;flex-shrink:0;margin-left:8px;display:inline-flex;align-items:center;justify-content:center;line-height:1;display:inline-flex;align-items:center;justify-content:center;line-height:1;height:26px;">EN</button>
+      <button onclick="openBadges()" style="background:#D39266;border:none;border-radius:20px;padding:4px 10px;font-family:'Sulphur Point',sans-serif;font-size:13px;letter-spacing:0.05em;color:#fff;cursor:pointer;flex-shrink:0;margin-left:6px;display:inline-flex;align-items:center;justify-content:center;line-height:1;height:26px;" title="我的徽章">✦</button>
     </div>
   </header>
 
@@ -1142,6 +1142,15 @@
     const msg = document.getElementById('saveMsg');
     msg.classList.add('show');
     setTimeout(() => msg.classList.remove('show'), 2000);
+    // 徽章檢查
+    const _newBadges = checkAndUnlockBadges();
+    if (_newBadges && _newBadges.length > 0) {
+      _newBadges.forEach((b, i) => {
+        const delay = 500 + i * 800;
+        if (b.type === 'month') setTimeout(() => showBadgeUnlocked(b.ym, b.y, b.m), delay);
+        if (b.type === 'milestone') setTimeout(() => showBadgeMilestone(b.n), delay);
+      });
+    }
   }
 
   // --- Modal 補填 ---
@@ -1185,6 +1194,15 @@
     renderLog();
     renderStreak();
     closeModalDirect();
+    // 徽章解鎖檢查
+    const _newBadges = checkAndUnlockBadges();
+    if (_newBadges && _newBadges.length > 0) {
+      _newBadges.forEach((b, i) => {
+        const delay = 500 + i * 800;
+        if (b.type === 'month') setTimeout(() => showBadgeUnlocked(b.ym, b.y, b.m), delay);
+        if (b.type === 'milestone') setTimeout(() => showBadgeMilestone(b.n), delay);
+      });
+    }
   }
 
   function clearModal() {
@@ -1837,7 +1855,7 @@
     blessingBtn: '♥\uFE0E 一封信，給今天的你 ♥\uFE0E',
     exportBtn: '匯出', importBtn: '匯入',
     modalTitle: '補填這天的心情',
-    modalSave: '儲存', modalClear: '清除', modalCancel: '取消',
+    modalSave: '儲存', modalClear: '清除',
     modalNote: '寫下今天的一些什麼...',
     streakText: n => `✦ 已經上色了 ${n} 天 ✦`,
     clickToFill: ' 點擊補填',
@@ -1854,7 +1872,7 @@
     blessingBtn: '♥\uFE0E A note, just for today ♥\uFE0E',
     exportBtn: 'Export', importBtn: 'Import',
     modalTitle: 'How was this day?',
-    modalSave: 'Save', modalClear: 'Clear', modalCancel: 'Cancel',
+    modalSave: 'Save', modalClear: 'Clear',
     modalNote: 'Write something about today...',
     streakText: n => `✦ ${n} days coloured ✦`,
     clickToFill: ' tap to fill',
@@ -2764,7 +2782,6 @@
         const mood = moodData[dateStr]?.mood || '';
         if (mood === 'happy') counts.happy++;
         else if (mood === 'sad') counts.sad++;
-        else if (mood === 'mixed') { counts.happy += 0.5; counts.sad += 0.5; }
         else if (mood === 'neutral') counts.neutral++;
         else counts.unrecorded++;
       }
@@ -2860,10 +2877,293 @@
     }, 1000);
   });
   </script>
+
+  <script>
+  // ── 徽章系統 Badge System ──────────────────────────────────────────
+  const BADGE_STORAGE_KEY = 'moodBadges';
+
+  function getBadgeData() {
+    try { return JSON.parse(localStorage.getItem(BADGE_STORAGE_KEY) || '{}'); } catch(e) { return {}; }
+  }
+  function saveBadgeData(data) {
+    try { localStorage.setItem(BADGE_STORAGE_KEY, JSON.stringify(data)); } catch(e) {}
+  }
+
+  function checkAndUnlockBadges() {
+    const badges = getBadgeData();
+    const allDates = Object.keys(moodData).sort();
+    if (allDates.length === 0) return [];
+
+    const totalDays = allDates.length;
+    const newlyUnlocked = [];
+
+    // 累積天數里程碑
+    const milestones = [100, 200, 365];
+    milestones.forEach(n => {
+      const key = `days_${n}`;
+      if (!badges[key] && totalDays >= n) {
+        badges[key] = { unlockedAt: new Date().toISOString().slice(0,10) };
+        newlyUnlocked.push({ type: 'milestone', n });
+      }
+    });
+
+    // 每月完成花（當月記錄 90%+，且月份已結束，且在下個月15號前）
+    const months = {};
+    allDates.forEach(d => {
+      const ym = d.slice(0,7);
+      if (!months[ym]) months[ym] = [];
+      months[ym].push(d);
+    });
+
+    Object.entries(months).forEach(([ym, dates]) => {
+      const key = `month_${ym}`;
+      if (badges[key]) return;
+
+      const [y, m] = ym.split('-').map(Number);
+      const daysInMonth = new Date(y, m, 0).getDate();
+      const firstInMonth = dates[0];
+      const firstDay = parseInt(firstInMonth.slice(8,10));
+      const eligibleDays = daysInMonth - firstDay + 1;
+      const required = Math.ceil(eligibleDays * 0.9);
+      const recorded = dates.length;
+
+      const today = new Date();
+      const monthEnd = new Date(y, m, 0);
+      const isMonthComplete = today >= monthEnd;
+      const deadline = new Date(y, m, 15);
+      const pastDeadline = today > deadline;
+      if (pastDeadline) return;
+
+      if (isMonthComplete && recorded >= required) {
+        badges[key] = { unlockedAt: new Date().toISOString().slice(0,10), month: ym };
+        newlyUnlocked.push({ type: 'month', ym, y, m });
+      }
+    });
+
+    saveBadgeData(badges);
+    return newlyUnlocked;
+  }
+
+  function renderBadges() {
+    checkAndUnlockBadges();
+    const badges = getBadgeData();
+    const container = document.getElementById('badgesList');
+    if (!container) return;
+    container.innerHTML = '';
+    const isEn = currentLang === 'en';
+    const flowerNamesEN = ['Tulip','Plum Blossom','Cherry Blossom','Nemophila','Sunflower','Hydrangea','Daisy','Amaryllis','Daylily','Maple','Myrrh Flower','Iceland Poppy'];
+    const flowerNamesZH = ['鬱金香','梅花','櫻花','粉蝶花','向日葵','繡球花','小雛菊','孤挺花','金針花','楓葉','沒藥花','冰島罌粟'];
+
+    // 月份花徽章
+    const monthSection = document.createElement('div');
+    monthSection.innerHTML = `<div style="font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.12em;color:#4D586F;opacity:0.5;margin-bottom:12px;">${isEn ? 'MONTHLY' : '每月'}</div>`;
+
+    const today = new Date();
+    const allMoodDates = Object.keys(moodData).sort();
+    const startYM = allMoodDates[0] ? allMoodDates[0].slice(0,7) : today.toISOString().slice(0,7);
+    const startDate = new Date(startYM + '-01');
+    const startYear = startDate.getFullYear();
+    const endYear = today.getFullYear();
+
+    for (let yr = endYear; yr >= startYear; yr--) {
+      const isCurrentYear = yr === endYear;
+      const yearWrap = document.createElement('div');
+      yearWrap.style.marginBottom = '16px';
+
+      const yearHeader = document.createElement('div');
+      yearHeader.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:10px;';
+      yearHeader.innerHTML = `
+        <span style="font-family:'Sulphur Point',sans-serif;font-size:13px;letter-spacing:0.08em;color:#4D586F;opacity:0.7;">${yr}</span>
+        <span id="yr-arrow-${yr}" style="font-size:10px;color:#4D586F;opacity:0.4;transition:transform 0.2s;">${isCurrentYear ? '▾' : '▸'}</span>`;
+
+      const monthGrid = document.createElement('div');
+      monthGrid.id = `yr-grid-${yr}`;
+      monthGrid.style.cssText = `display:${isCurrentYear ? 'flex' : 'none'};flex-wrap:wrap;gap:12px;`;
+
+      yearHeader.onclick = () => {
+        const grid = document.getElementById(`yr-grid-${yr}`);
+        const arrow = document.getElementById(`yr-arrow-${yr}`);
+        const open = grid.style.display !== 'none';
+        grid.style.display = open ? 'none' : 'flex';
+        arrow.textContent = open ? '▸' : '▾';
+      };
+
+      for (let m = 1; m <= 12; m++) {
+        const ym = `${yr}-${String(m).padStart(2,'0')}`;
+        if (new Date(yr, m-1, 1) > today) continue;
+        if (new Date(yr, m-1, 1) < new Date(startDate.getFullYear(), startDate.getMonth(), 1)) continue;
+
+        const key = `month_${ym}`;
+        const unlocked = !!badges[key];
+        const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+        const svgIndex = unlocked ? String(m + 1).padStart(2, '0') : '01';
+
+        const item = document.createElement('div');
+        item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;';
+        item.innerHTML = `
+          <div style="width:84px;height:84px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;opacity:${unlocked ? '1' : '0.35'};">
+            <img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:78px;height:78px;object-fit:contain;">
+          </div>
+          <div style="font-family:'Sulphur Point',sans-serif;font-size:10px;letter-spacing:0.06em;color:#4D586F;opacity:${unlocked ? '0.8' : '0.3'};">${monthName}</div>`;
+
+        if (unlocked) {
+          item.onclick = () => showBadgeDetail(
+            `${monthName}. ${yr}`,
+            isEn ? `Collected Badge: ${flowerNamesEN[m-1]}` : `恭喜你搜集到：${flowerNamesZH[m-1]}`,
+            isEn ? `Thank you, and congratulations —<br>you've recorded 90% of this month for yourself!` : `謝謝你，也恭喜你<br>已達成這個月幫自己紀錄了90%！`,
+            isEn ? `✦ Unlocked: ${badges[key].unlockedAt} ✦` : `✦ 解鎖日：${badges[key].unlockedAt} ✦`,
+            String(m + 1).padStart(2, '0')
+          );
+        }
+        monthGrid.appendChild(item);
+      }
+      yearWrap.appendChild(yearHeader);
+      yearWrap.appendChild(monthGrid);
+      monthSection.appendChild(yearWrap);
+    }
+    container.appendChild(monthSection);
+
+    // 分隔線
+    const divider = document.createElement('hr');
+    divider.style.cssText = 'border:none;border-top:1px solid rgba(77,88,111,0.12);margin:24px 0 31px;';
+    container.appendChild(divider);
+
+    // 累積天數徽章
+    const milestonesSection = document.createElement('div');
+    milestonesSection.style.marginTop = '28px';
+    milestonesSection.innerHTML = `<div style="font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.12em;color:#4D586F;opacity:0.5;margin-bottom:12px;">${isEn ? 'MILESTONES' : '里程碑'}</div>`;
+    const msGrid = document.createElement('div');
+    msGrid.style.cssText = 'display:flex;gap:12px;';
+
+    const msSvgMap = { 100: '15', 200: '16', 365: '17' };
+    [100, 200, 365].forEach(n => {
+      const key = `days_${n}`;
+      const unlocked = !!badges[key];
+      const svgIndex = unlocked ? msSvgMap[n] : '14';
+      const item = document.createElement('div');
+      item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;';
+      item.innerHTML = `
+        <div style="width:84px;height:84px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;opacity:${unlocked ? '1' : '0.35'};">
+          <img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:78px;height:78px;object-fit:contain;">
+        </div>
+        <div style="font-family:'Sulphur Point',sans-serif;font-size:10px;letter-spacing:0.06em;color:#4D586F;opacity:${unlocked ? '0.8' : '0.3'};">${n}${isEn ? 'd' : '天'}</div>`;
+      const msMsgMap2 = {
+        100: { zhTitle: '第一個 100 天！', enTitle: 'Congrats! First 100 Days!', zhSub: '幫自己點亮了燈！', enSub: 'You lit up the light!', zhDesc: '恭喜你，已經上色了 100 天了！', enDesc: "Congrats, you've coloured 100 days!" },
+        200: { zhTitle: '200 天！', enTitle: 'Congrats! 200 Days!', zhSub: '幫自己收集了月亮的圓缺！', enSub: 'You collected the phases of the moon.', zhDesc: '恭喜你，已經上色了 200 天了！', enDesc: "Congrats, you've coloured 200 days!" },
+        365: { zhTitle: '365 天！', enTitle: 'Congrats! 365 Days!', zhSub: '喀嚓！紀錄日子吧！', enSub: 'Click! Keep recording your days!', zhDesc: '恭喜你，已經上色了 365 天了！', enDesc: "Congrats, you've coloured 365 days!" }
+      };
+      if (unlocked) {
+        const msSvgMap2 = { 100: '15', 200: '16', 365: '17' };
+        item.onclick = () => showBadgeDetail(
+          isEn ? msMsgMap2[n].enTitle : msMsgMap2[n].zhTitle,
+          isEn ? `Collected Badge: ${msMsgMap2[n].enSub}` : `Collected Badge: ${msMsgMap2[n].zhSub}`,
+          isEn ? msMsgMap2[n].enDesc : msMsgMap2[n].zhDesc,
+          isEn ? `✦ Unlocked: ${badges[key].unlockedAt} ✦` : `✦ 解鎖日：${badges[key].unlockedAt} ✦`,
+          msSvgMap2[n]
+        );
+      }
+      msGrid.appendChild(item);
+    });
+    milestonesSection.appendChild(msGrid);
+    container.appendChild(milestonesSection);
+  }
+
+  function showBadgeDetail(title, subtitle, desc, date, svgIndex) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(60,55,48,0.4);backdrop-filter:blur(4px);z-index:600;display:flex;align-items:center;justify-content:center;padding:24px;';
+    overlay.innerHTML = `
+      <div style="background:#F3EEE8;border-radius:20px;padding:28px 24px;max-width:280px;width:100%;text-align:center;">
+        <div style="font-family:'Sulphur Point',sans-serif;font-size:16px;letter-spacing:0.08em;color:#4D586F;margin-bottom:6px;">${title}</div>
+        <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:12px;color:#D39266;letter-spacing:0.04em;margin-bottom:14px;">${subtitle}</div>
+        ${svgIndex ? `<div style="display:flex;justify-content:center;margin-bottom:14px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:96px;height:96px;object-fit:contain;"></div>` : ''}
+        <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:13px;line-height:1.7;color:#4D586F;opacity:0.7;margin-bottom:12px;">${desc}</div>
+        <div style="font-family:'Sulphur Point',sans-serif;font-size:11px;color:#4D586F;opacity:0.4;margin-bottom:20px;">${date}</div>
+        <button onclick="this.parentElement.parentElement.remove()" style="background:#959fb0;border:none;border-radius:20px;padding:8px 24px;font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.1em;color:#fff;cursor:pointer;">OK</button>
+      </div>`;
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+  }
+
+  function showBadgeMilestone(n) {
+    const isEn = currentLang === 'en';
+    const msSvgMap = { 100: '15', 200: '16', 365: '17' };
+    const msMsgMap = {
+      100: { zh: '點亮了燈！', en: 'You lit up the light!' },
+      200: { zh: '收集了月亮的圓缺', en: 'You collected the phases of the moon.' },
+      365: { zh: '喀嚓！紀錄日子吧！', en: 'Click! Keep recording your days!' }
+    };
+    const svgIndex = msSvgMap[n];
+    const title = isEn ? `Congrats! ${n} Days Coloured!` : `恭喜你，已經上色了 ${n} 天了！`;
+    const msg = isEn ? msMsgMap[n].en : msMsgMap[n].zh;
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(60,55,48,0.4);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:center;justify-content:center;padding:24px;';
+    overlay.innerHTML = `
+      <div style="background:#F3EEE8;border-radius:20px;padding:32px 24px;max-width:300px;width:100%;text-align:center;animation:blessingFadeIn 0.3s ease;">
+        <div style="display:flex;justify-content:center;margin-bottom:12px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:96px;height:96px;object-fit:contain;"></div>
+        <div style="font-family:'Sulphur Point',sans-serif;font-size:18px;letter-spacing:0.08em;color:#4D586F;margin-bottom:14px;">${title}</div>
+        <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:13px;line-height:1.8;color:#4D586F;opacity:0.75;margin-bottom:24px;">${msg}</div>
+        <button onclick="this.parentElement.parentElement.remove()" style="background:#D39266;border:none;border-radius:20px;padding:8px 28px;font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.1em;color:#fff;cursor:pointer;">✦</button>
+      </div>`;
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+  }
+
+  function showBadgeUnlocked(ym, y, m) {
+    const isEn = currentLang === 'en';
+    const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+    const flowerNamesEN = ['Tulip','Plum Blossom','Cherry Blossom','Nemophila','Sunflower','Hydrangea','Daisy','Amaryllis','Daylily','Maple','Myrrh Flower','Iceland Poppy'];
+    const flowerNamesZH = ['鬱金香','梅花','櫻花','粉蝶花','向日葵','繡球花','小雛菊','孤挺花','金針花','楓葉','沒藥花','冰島罌粟'];
+    const flowerEN = flowerNamesEN[m-1] || '';
+    const flowerZH = flowerNamesZH[m-1] || '';
+    const svgIndex = String(m + 1).padStart(2, '0');
+    const title = `${monthName} ${y}`;
+    const msg = isEn
+      ? `You have coloured 90% of this month. Thank you for doing this for yourself.`
+      : `謝謝你，幫自己紀錄了90% 的日子在這個月！`;
+    const series = isEn ? `✦ ${y} Bloom Series: ${flowerEN} ✦` : `✦ ${y} 是花系列：${flowerZH} ✦`;
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(60,55,48,0.4);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:center;justify-content:center;padding:24px;';
+    overlay.innerHTML = `
+      <div style="background:#F3EEE8;border-radius:20px;padding:32px 24px;max-width:300px;width:100%;text-align:center;animation:blessingFadeIn 0.3s ease;">
+        <div style="display:flex;justify-content:center;margin-bottom:12px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:96px;height:96px;object-fit:contain;"></div>
+        <div style="font-family:'Sulphur Point',sans-serif;font-size:18px;letter-spacing:0.08em;color:#4D586F;margin-bottom:14px;">${title}</div>
+        <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:13px;line-height:1.8;color:#4D586F;opacity:0.75;margin-bottom:14px;">${msg}</div>
+        <div style="font-family:'Sulphur Point',sans-serif;font-size:11px;color:#D39266;letter-spacing:0.08em;margin-bottom:24px;">${series}</div>
+        <button onclick="this.parentElement.parentElement.remove()" style="background:#D39266;border:none;border-radius:20px;padding:8px 28px;font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.1em;color:#fff;cursor:pointer;">✦</button>
+      </div>`;
+    overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+    document.body.appendChild(overlay);
+  }
+
+  function openBadges() {
+    renderBadges();
+    document.getElementById('badgesOverlay').style.display = 'block';
+  }
+
+  function closeBadges() {
+    document.getElementById('badgesOverlay').style.display = 'none';
+  }
+
+  // 儲存後觸發徽章檢查
+  const _origSaveToday = typeof saveToday === 'function' ? saveToday : null;
+  </script>
+
   <div style="text-align:center;padding:28px 0 20px;font-family:'Sulphur Point',sans-serif;font-size:11px;color:#8e8e8e;letter-spacing:0.08em;">
     © 2026 Triple.Cell_illustration — 細胞日常插畫
   </div>
 
+<!-- 徽章頁 -->
+<div id="badgesOverlay" style="display:none;position:fixed;inset:0;background:#F3EEE8;z-index:500;overflow-y:auto;">
+  <div style="max-width:480px;margin:0 auto;padding:90px 24px 60px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;">
+      <div style="font-family:'Sulphur Point',sans-serif;font-size:22px;font-weight:700;letter-spacing:0.12em;color:#4D586F;">MY COLLECTION</div>
+      <button onclick="closeBadges()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#4D586F;opacity:0.5;line-height:1;">✕</button>
+    </div>
+    <div id="badgesList" style="display:flex;flex-direction:column;gap:16px;"></div>
+  </div>
+</div>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -2921,8 +3221,6 @@
     if (modalSave) modalSave.textContent = L.modalSave;
     const modalClear = document.querySelector('.modal-clear');
     if (modalClear) modalClear.textContent = L.modalClear;
-    const modalCancel = document.querySelector('.modal-cancel');
-    if (modalCancel) modalCancel.textContent = L.modalCancel;
     // textarea placeholders
     const noteInput = document.getElementById('noteInput');
     if (noteInput) noteInput.placeholder = L.modalNote;
