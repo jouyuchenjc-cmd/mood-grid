@@ -2978,33 +2978,37 @@
 
       const monthGrid = document.createElement('div');
       monthGrid.id = `yr-grid-${yr}`;
-      monthGrid.style.cssText = `display:${isCurrentYear ? 'flex' : 'none'};flex-wrap:wrap;gap:12px;`;
+      monthGrid.style.cssText = `display:${isCurrentYear ? 'grid' : 'none'};grid-template-columns:repeat(3,1fr);gap:16px;`;
 
       yearHeader.onclick = () => {
         const grid = document.getElementById(`yr-grid-${yr}`);
         const arrow = document.getElementById(`yr-arrow-${yr}`);
         const open = grid.style.display !== 'none';
-        grid.style.display = open ? 'none' : 'flex';
+        grid.style.display = open ? 'none' : 'grid';
         arrow.textContent = open ? '▸' : '▾';
       };
 
       for (let m = 1; m <= 12; m++) {
-        const ym = `${yr}-${String(m).padStart(2,'0')}`;
-        if (new Date(yr, m-1, 1) > today) continue;
-        if (new Date(yr, m-1, 1) < new Date(startDate.getFullYear(), startDate.getMonth(), 1)) continue;
-
+        const moNum = String(m).padStart(2,'0');
+        const ym = `${yr}-${moNum}`;
+        const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
         const key = `month_${ym}`;
         const unlocked = !!badges[key];
-        const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m-1];
+        // 未來月份（今年還沒到）或還沒開始記錄前的月份 → 用空心愛心
+        // 開始使用前的月份：不顯示
+        const isBeforeStart = new Date(yr, m-1, 1) < new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+        if (isBeforeStart) continue;
+
+        const isFuture = new Date(yr, m-1, 1) > today;
         const svgIndex = unlocked ? String(m + 1).padStart(2, '0') : '01';
 
         const item = document.createElement('div');
-        item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;';
+        item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;cursor:' + (unlocked ? 'pointer' : 'default') + ';';
         item.innerHTML = `
-          <div style="width:84px;height:84px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;opacity:${unlocked ? '1' : '0.35'};">
-            <img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:78px;height:78px;object-fit:contain;">
+          <div style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;transition:all 0.2s;opacity:${unlocked ? '1' : (isFuture ? '0.2' : '0.35')};">
+            <img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:88%;height:88%;object-fit:contain;">
           </div>
-          <div style="font-family:'Sulphur Point',sans-serif;font-size:10px;letter-spacing:0.06em;color:#4D586F;opacity:${unlocked ? '0.8' : '0.3'};">${monthName}</div>`;
+          <div style="font-family:'Sulphur Point',sans-serif;font-size:10px;letter-spacing:0.06em;color:#4D586F;opacity:${unlocked ? '0.8' : (isFuture ? '0.2' : '0.3')};">${monthName}</div>`;
 
         if (unlocked) {
           item.onclick = () => showBadgeDetail(
@@ -3033,7 +3037,7 @@
     milestonesSection.style.marginTop = '28px';
     milestonesSection.innerHTML = `<div style="font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.12em;color:#4D586F;opacity:0.5;margin-bottom:12px;">${isEn ? 'MILESTONES' : '里程碑'}</div>`;
     const msGrid = document.createElement('div');
-    msGrid.style.cssText = 'display:flex;gap:12px;';
+    msGrid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:16px;';
 
     const msSvgMap = { 100: '15', 200: '16', 365: '17' };
     [100, 200, 365].forEach(n => {
@@ -3043,8 +3047,8 @@
       const item = document.createElement('div');
       item.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;';
       item.innerHTML = `
-        <div style="width:84px;height:84px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;opacity:${unlocked ? '1' : '0.35'};">
-          <img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:78px;height:78px;object-fit:contain;">
+        <div style="width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;transition:all 0.2s;opacity:${unlocked ? '1' : '0.35'};">
+          <img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:88%;height:88%;object-fit:contain;">
         </div>
         <div style="font-family:'Sulphur Point',sans-serif;font-size:10px;letter-spacing:0.06em;color:#4D586F;opacity:${unlocked ? '0.8' : '0.3'};">${n}${isEn ? 'd' : '天'}</div>`;
       const msMsgMap2 = {
@@ -3075,7 +3079,7 @@
       <div style="background:#F3EEE8;border-radius:20px;padding:28px 24px;max-width:280px;width:100%;text-align:center;">
         <div style="font-family:'Sulphur Point',sans-serif;font-size:16px;letter-spacing:0.08em;color:#4D586F;margin-bottom:6px;">${title}</div>
         <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:12px;color:#D39266;letter-spacing:0.04em;margin-bottom:14px;">${subtitle}</div>
-        ${svgIndex ? `<div style="display:flex;justify-content:center;margin-bottom:14px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:96px;height:96px;object-fit:contain;"></div>` : ''}
+        ${svgIndex ? `<div style="display:flex;justify-content:center;margin-bottom:14px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:144px;height:144px;object-fit:contain;"></div>` : ''}
         <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:13px;line-height:1.7;color:#4D586F;opacity:0.7;margin-bottom:12px;">${desc}</div>
         <div style="font-family:'Sulphur Point',sans-serif;font-size:11px;color:#4D586F;opacity:0.4;margin-bottom:20px;">${date}</div>
         <button onclick="this.parentElement.parentElement.remove()" style="background:#959fb0;border:none;border-radius:20px;padding:8px 24px;font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.1em;color:#fff;cursor:pointer;">OK</button>
@@ -3100,7 +3104,7 @@
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(60,55,48,0.4);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:center;justify-content:center;padding:24px;';
     overlay.innerHTML = `
       <div style="background:#F3EEE8;border-radius:20px;padding:32px 24px;max-width:300px;width:100%;text-align:center;animation:blessingFadeIn 0.3s ease;">
-        <div style="display:flex;justify-content:center;margin-bottom:12px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:96px;height:96px;object-fit:contain;"></div>
+        <div style="display:flex;justify-content:center;margin-bottom:12px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:144px;height:144px;object-fit:contain;"></div>
         <div style="font-family:'Sulphur Point',sans-serif;font-size:18px;letter-spacing:0.08em;color:#4D586F;margin-bottom:14px;">${title}</div>
         <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:13px;line-height:1.8;color:#4D586F;opacity:0.75;margin-bottom:24px;">${msg}</div>
         <button onclick="this.parentElement.parentElement.remove()" style="background:#D39266;border:none;border-radius:20px;padding:8px 28px;font-family:'Sulphur Point',sans-serif;font-size:11px;letter-spacing:0.1em;color:#fff;cursor:pointer;">✦</button>
@@ -3127,7 +3131,7 @@
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(60,55,48,0.4);backdrop-filter:blur(4px);z-index:700;display:flex;align-items:center;justify-content:center;padding:24px;';
     overlay.innerHTML = `
       <div style="background:#F3EEE8;border-radius:20px;padding:32px 24px;max-width:300px;width:100%;text-align:center;animation:blessingFadeIn 0.3s ease;">
-        <div style="display:flex;justify-content:center;margin-bottom:12px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:96px;height:96px;object-fit:contain;"></div>
+        <div style="display:flex;justify-content:center;margin-bottom:12px;"><img src="./badges/Collection-${svgIndex}.svg" alt="" style="width:144px;height:144px;object-fit:contain;"></div>
         <div style="font-family:'Sulphur Point',sans-serif;font-size:18px;letter-spacing:0.08em;color:#4D586F;margin-bottom:14px;">${title}</div>
         <div style="font-family:'Noto Sans TC','PingFang TC',sans-serif;font-size:13px;line-height:1.8;color:#4D586F;opacity:0.75;margin-bottom:14px;">${msg}</div>
         <div style="font-family:'Sulphur Point',sans-serif;font-size:11px;color:#D39266;letter-spacing:0.08em;margin-bottom:24px;">${series}</div>
@@ -3157,10 +3161,12 @@
 <!-- 徽章頁 -->
 <div id="badgesOverlay" style="display:none;position:fixed;inset:0;background:#F3EEE8;z-index:500;overflow-y:auto;">
   <div style="max-width:480px;margin:0 auto;padding:90px 24px 60px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
       <div style="font-family:'Sulphur Point',sans-serif;font-size:22px;font-weight:700;letter-spacing:0.12em;color:#4D586F;">MY COLLECTION</div>
       <button onclick="closeBadges()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#4D586F;opacity:0.5;line-height:1;">✕</button>
     </div>
+
+
     <div id="badgesList" style="display:flex;flex-direction:column;gap:16px;"></div>
   </div>
 </div>
