@@ -21,7 +21,7 @@
     --happy-light: #FBE8C0;
     --sad: #C06145;
     --sad-light: #E8B09A;
-    --neutral: #d1d1d1;
+    --neutral: #dbdbdb;
     --neutral-light: #D8D8D8;
     --empty: #DCE5EF;
     --bg: #F3EEE8;
@@ -1305,7 +1305,7 @@
     const list = document.getElementById('logList');
     if (!list) return;
     list.innerHTML = '';
-    const moodColors = { happy: '#F6CE83', mixed: '#D39266', sad: '#C06145', neutral: '#9F9F9F' };
+    const moodColors = { happy: '#F6CE83', mixed: '#D39266', sad: '#C06145', neutral: '#dbdbdb' };
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     const entries = Object.entries(moodData)
@@ -1326,7 +1326,7 @@
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(77,88,111,0.08);';
       const dot = document.createElement('div');
-      dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${moodColors[entry.mood] || '#9F9F9F'};flex-shrink:0;margin-top:4px;`;
+      dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${moodColors[entry.mood] || '#dbdbdb'};flex-shrink:0;margin-top:4px;`;
       const info = document.createElement('div');
       info.style.cssText = 'flex:1;min-width:0;';
       const dateEl = document.createElement('div');
@@ -1751,7 +1751,7 @@
       { key: 'happy', label: _L.happy, color: '#F6CE83', count: counts.happy },
       { key: 'mixed', label: _L.mixed, color: '#D39266', count: counts.mixed },
       { key: 'sad', label: _L.sad, color: '#C06145', count: counts.sad },
-      { key: 'neutral', label: _L.neutral, color: '#9F9F9F', count: counts.neutral },
+      { key: 'neutral', label: _L.neutral, color: '#dbdbdb', count: counts.neutral },
       { key: 'unrecorded', label: _L.unrecorded, color: '#DCE5EF', count: unrecorded }
     ];
 
