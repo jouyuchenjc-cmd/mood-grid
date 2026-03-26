@@ -2,7 +2,6 @@ const CACHE_NAME = 'moodgrid-v4';
 const ASSETS = [
   './',
   './index.html',
-  './mood-grid-2-23.html',
   'https://fonts.googleapis.com/css2?family=Sulphur+Point:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js',
   './badges/Collection-01.svg',
@@ -40,14 +39,6 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-
-  // Notion API / Cloudflare Worker — 永遠走網路，不快取
-  if (url.hostname.includes('workers.dev') || url.hostname.includes('notion.so')) {
-    e.respondWith(fetch(e.request).catch(() => new Response(JSON.stringify({ error: 'offline' }), {
-      headers: { 'Content-Type': 'application/json' }
-    })));
-    return;
-  }
 
   // Google Fonts — network first，失敗才用快取
   if (url.hostname.includes('fonts.googleapis.com') || url.hostname.includes('fonts.gstatic.com')) {
