@@ -21,7 +21,7 @@
     --happy-light: #FBE8C0;
     --sad: #C06145;
     --sad-light: #E8B09A;
-    --neutral: #dbdbdb;
+    --neutral: #9F9F9F;
     --neutral-light: #D8D8D8;
     --empty: #DCE5EF;
     --bg: #F3EEE8;
@@ -1305,7 +1305,7 @@
     const list = document.getElementById('logList');
     if (!list) return;
     list.innerHTML = '';
-    const moodColors = { happy: '#F6CE83', mixed: '#D39266', sad: '#C06145', neutral: '#dbdbdb' };
+    const moodColors = { happy: '#F6CE83', mixed: '#D39266', sad: '#C06145', neutral: '#9F9F9F' };
     const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
     const entries = Object.entries(moodData)
@@ -1326,7 +1326,7 @@
       const row = document.createElement('div');
       row.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid rgba(77,88,111,0.08);';
       const dot = document.createElement('div');
-      dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${moodColors[entry.mood] || '#dbdbdb'};flex-shrink:0;margin-top:4px;`;
+      dot.style.cssText = `width:8px;height:8px;border-radius:50%;background:${moodColors[entry.mood] || '#9F9F9F'};flex-shrink:0;margin-top:4px;`;
       const info = document.createElement('div');
       info.style.cssText = 'flex:1;min-width:0;';
       const dateEl = document.createElement('div');
@@ -1386,7 +1386,8 @@
   function exportData() {
     const count = Object.keys(moodData).length;
     if (count === 0) { showConfirm('還沒有任何紀錄可以匯出！', null, null); document.getElementById('confirmCancel').style.display='none'; return; }
-    const json = JSON.stringify(moodData, null, 2);
+    const exportObj = { moodData: moodData, badges: getBadgeData() };
+    const json = JSON.stringify(exportObj, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1409,31 +1410,49 @@
     const reader = new FileReader();
     reader.onload = (evt) => {
       try {
-        const imported = JSON.parse(evt.target.result);
+        const raw = JSON.parse(evt.target.result);
+
+        // 新格式：{ moodData, badges }；舊格式：直接是心情資料 key-value
+        const isNewFormat = raw.moodData && typeof raw.moodData === 'object' && !raw['2024'] && !Object.keys(raw).some(k => /^\d{4}-\d{2}-\d{2}$/.test(k));
+        const imported = isNewFormat ? raw.moodData : raw;
+        const importedBadges = isNewFormat ? (raw.badges || {}) : null;
+
         const total = Object.keys(imported).length;
         const conflicts = Object.keys(imported).filter(d => moodData[d]);
         const newOnly = total - conflicts.length;
-        let overwrite = false;
+
+        function finishImport(mergeAll) {
+          if (mergeAll) {
+            Object.assign(moodData, imported);
+          } else {
+            Object.keys(imported).forEach(d => { if (!moodData[d]) moodData[d] = imported[d]; });
+          }
+          // 還原徽章：先用匯出的徽章，再重算補上可能漏掉的
+          if (importedBadges) {
+            const currentBadges = getBadgeData();
+            const merged = Object.assign({}, importedBadges, currentBadges); // 保留本機已有的
+            saveBadgeData(merged);
+          }
+          checkAndUnlockBadges(); // 重算，補上符合條件但匯出時還沒有的
+          saveData(); renderGrid(); renderLog();
+        }
 
         if (conflicts.length > 0) {
           const msg = `匯入檔案共 ${total} 筆紀錄\n新增 ${newOnly} 筆（不衝突）\n衝突 ${conflicts.length} 筆（已有紀錄）\n\n確定 → 全部覆蓋\n取消 → 只匯入新的`;
           showConfirm(msg,
             () => {
-              Object.assign(moodData, imported);
-              saveData(); renderGrid(); renderLog();
+              finishImport(true);
               showConfirm(`✅ 匯入完成！共覆蓋 ${total} 筆紀錄。`, null, null);
               document.getElementById('confirmCancel').style.display = 'none';
             },
             () => {
-              Object.keys(imported).forEach(d => { if (!moodData[d]) moodData[d] = imported[d]; });
-              saveData(); renderGrid(); renderLog();
+              finishImport(false);
               showConfirm(`✅ 匯入完成！新增 ${newOnly} 筆紀錄。`, null, null);
               document.getElementById('confirmCancel').style.display = 'none';
             }
           );
         } else {
-          Object.assign(moodData, imported);
-          saveData(); renderGrid(); renderLog();
+          finishImport(true);
           showConfirm(`✅ 匯入完成！共新增 ${total} 筆紀錄。`, null, null);
           document.getElementById('confirmCancel').style.display = 'none';
         }
@@ -1579,7 +1598,7 @@
     const daysInMonth = new Date(year, month+1, 0).getDate();
 
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'display:flex;flex-wrap:wrap;gap:6px;';
+    wrap.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);gap:8px 0;justify-items:center;';
 
     for (let d = 1; d <= daysInMonth; d++) {
       const date = new Date(year, month, d);
@@ -1588,10 +1607,10 @@
       const isPast = date < today;
 
       const col = document.createElement('div');
-      col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;';
+      col.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0;justify-content:flex-start;';
 
       const lbl = document.createElement('div');
-      lbl.style.cssText = 'width:31px;font-family:Sulphur Point,sans-serif;font-size:8px;color:#ffffff;text-align:center;letter-spacing:0.04em;';
+      lbl.style.cssText = 'width:32px;font-family:Sulphur Point,sans-serif;font-size:8px;color:#ffffff;text-align:center;letter-spacing:0.04em;';
       lbl.textContent = String(d).padStart(2,'0');
 
       const cell = document.createElement('div');
@@ -1599,7 +1618,7 @@
       cell.className = `week-cell${dateStr === todayStr ? ' today-cell' : ''}${isFuture ? ' future' : ''}`;
       if (mood) cell.classList.add(mood);
       else if (isPast) cell.classList.add('past-empty-week');
-      cell.style.cssText = 'width:31px;height:31px;font-size:9px;';
+      cell.style.cssText = 'width:32px;height:32px;font-size:9px;flex-shrink:0;';
 
       if (!isFuture) {
         const entry = moodData[dateStr];
@@ -1751,7 +1770,7 @@
       { key: 'happy', label: _L.happy, color: '#F6CE83', count: counts.happy },
       { key: 'mixed', label: _L.mixed, color: '#D39266', count: counts.mixed },
       { key: 'sad', label: _L.sad, color: '#C06145', count: counts.sad },
-      { key: 'neutral', label: _L.neutral, color: '#dbdbdb', count: counts.neutral },
+      { key: 'neutral', label: _L.neutral, color: '#9F9F9F', count: counts.neutral },
       { key: 'unrecorded', label: _L.unrecorded, color: '#DCE5EF', count: unrecorded }
     ];
 
