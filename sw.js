@@ -2,6 +2,7 @@ const CACHE_NAME = 'moodgrid-v4';
 const ASSETS = [
   './',
   './index.html',
+  './icon.png',
   'https://fonts.googleapis.com/css2?family=Sulphur+Point:wght@300;400;700&family=Noto+Sans+TC:wght@300;400;500&family=Noto+Sans+JP:wght@300;400;500&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js',
   './badges/Collection-01.svg',
