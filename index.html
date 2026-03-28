@@ -3053,10 +3053,39 @@
           <div style="font-family:'Sulphur Point',sans-serif;font-size:10px;letter-spacing:0.06em;color:#4D586F;opacity:${unlocked ? '0.8' : (isFuture ? '0.2' : '0.3')};">${monthName}</div>`;
 
         if (unlocked) {
+
+    const _flowerDescZH = [
+      '在一年的最初，願這場覺察之旅，能成為你日子裡的一小束光，照亮著你',
+      '最冷的季節，最堅韌的花，願能夠為你的覺察之旅存下更多勇氣',
+      '春天的身影，總是藏在日子裡，願你發現了自己綻放著的每個美好瞬間',
+      '勇氣之花的月份，願你在這趟自我紀錄裡，發現了更多不同樣貌的自己',
+      '其實我們自己能夠成為自己的太陽，願你在這旅程裡遇見那樣的發現時刻',
+      '一年過了一半了！願你擁有了很多美好的瞬間，跟值得為自己感到開心的時刻',
+      '願你在日子裡，收羅了很多讓自己感到平靜的時刻，很多安心的瞬間',
+      '頑強的毅力，是孤挺花的花語。願你在日子裡，都勇敢選了做不違背心的選項',
+      '在需要的時候，看看那些困擾自己的煩惱，是不是需要被放下了～',
+      '紅了的山頭，像是訴說著日子總是有著變化，而我們也總會在那些變化裡，找到新的可能',
+      '準備收尾一年的月份裡，願你在這旅程裡，發現自己能夠為自己帶來的安定力量',
+      '無論這一年，經歷了什麼，讓我們在這時刻一起，更加溫柔的善待自己吧'
+    ];
+    const _flowerDescEN = [
+      `At the very start of a new year, hope this journey of self-awareness become a small light in your days — one that gently illuminates who you are.`,
+      `The most resilient flower blooms in the coldest season. Wish this journey store up a little more courage for you in your daily.`,
+      `Spring has a way of hiding in ordinary days. Take a look, you might notice every quiet moment you’ve blossomed and loved.`,
+      `This flower means courage. Wish this practice of recording yourself reveal new facets of who you are.`,
+      `We can become our own sun. Hope this journey would bring you that discovery.`,
+      `Half a year has passed. Wish you have held many beautiful moments — and reasons to feel proud of yourself.`,
+      `Wish you had collected moments of calm — many small pockets of peace.`,
+      `Resilience is the language of this flower. Wish you find yourself choosing, again and again, what feels true to your heart.`,
+      `When the time feels right, take a look at what’s been weighing on you — and ask if it’s ready to be let go.`,
+      `The reddened hills seem to say that days are always changing. And in that change, there is always something new waiting to be found.`,
+      `As the year draws to a close, wish you discover the peace, steadying strength you’ve been carrying within yourself all along.`,
+      `Whatever this year has held — let’s take this moment, together, to be a little more gentle with ourselves.`
+    ];
           item.onclick = () => showBadgeDetail(
             `${monthName}. ${yr}`,
             isEn ? `Collected Badge: ${flowerNamesEN[m-1]}` : `恭喜你搜集到：${flowerNamesZH[m-1]}`,
-            isEn ? `Thank you, and congratulations —<br>you've recorded 90% of this month for yourself!` : `謝謝你，也恭喜你<br>已達成這個月幫自己紀錄了90%！`,
+            isEn ? (_flowerDescEN[m-1] || '') : (_flowerDescZH[m-1] || ''),
             isEn ? `✦ Unlocked: ${badges[key].unlockedAt} ✦` : `✦ 解鎖日：${badges[key].unlockedAt} ✦`,
             String(m + 1).padStart(2, '0')
           );
@@ -3094,9 +3123,9 @@
         </div>
         <div style="font-family:'Sulphur Point',sans-serif;font-size:10px;letter-spacing:0.06em;color:#4D586F;opacity:${unlocked ? '0.8' : '0.3'};">${n}${isEn ? 'd' : '天'}</div>`;
       const msMsgMap2 = {
-        100: { zhTitle: '第一個 100 天！', enTitle: 'Congrats! First 100 Days!', zhSub: '幫自己點亮了燈！', enSub: 'You lit up the light!', zhDesc: '恭喜你，已經上色了 100 天了！', enDesc: "Congrats, you've coloured 100 days!" },
-        200: { zhTitle: '200 天！', enTitle: 'Congrats! 200 Days!', zhSub: '幫自己收集了月亮的圓缺！', enSub: 'You collected the phases of the moon.', zhDesc: '恭喜你，已經上色了 200 天了！', enDesc: "Congrats, you've coloured 200 days!" },
-        365: { zhTitle: '365 天！', enTitle: 'Congrats! 365 Days!', zhSub: '喀嚓！紀錄日子吧！', enSub: 'Click! Keep recording your days!', zhDesc: '恭喜你，已經上色了 365 天了！', enDesc: "Congrats, you've coloured 365 days!" }
+        100: { zhTitle: '第一個 100 天！', enTitle: 'Congrats! First 100 Days!', zhSub: '幫自己點亮了燈！', enSub: 'You lit up the light!', zhDesc: '第一百天，希望這紀錄之旅成為了你日子裡的一盞燈，在需要時，點亮他，看看自己收藏了多少情緒的保障吧', enDesc: `A hundred days in. Hope this practice have become a small lamp in your life — one you can turn to whenever you need, to see how much you’ve collected.` },
+        200: { zhTitle: '200 天！', enTitle: 'Congrats! 200 Days!', zhSub: '幫自己收集了月亮的圓缺！', enSub: 'You collected the phases of the moon.', zhDesc: '日子裡，總有些天像是滿月，有些日子像玄月，稍微暗了點，但沒事的，下一個滿月會到達的', enDesc: `Some days feel like a full moon, bright and full. Others feel darker, quieter. That’s okay. The next full moon is always on its way.` },
+        365: { zhTitle: '365 天！', enTitle: 'Congrats! 365 Days!', zhSub: '喀嚓！紀錄日子吧！', enSub: 'Click! Keep recording your days!', zhDesc: '收集到的這天，我想誰都沒想過居然紀錄了一年份了啊！請為自己掌聲吧！', enDesc: `A whole year. I don’t think either of us quite expected this. Take a moment — and give yourself a round of applause.` }
       };
       if (unlocked) {
         const msSvgMap2 = { 100: '15', 200: '16', 365: '17' };
@@ -3134,9 +3163,9 @@
     const isEn = currentLang === 'en';
     const msSvgMap = { 100: '15', 200: '16', 365: '17' };
     const msMsgMap = {
-      100: { zh: '點亮了燈！', en: 'You lit up the light!' },
-      200: { zh: '收集了月亮的圓缺', en: 'You collected the phases of the moon.' },
-      365: { zh: '喀嚓！紀錄日子吧！', en: 'Click! Keep recording your days!' }
+      100: { zh: '第一百天，希望這紀錄之旅成為了你日子裡的一盞燈，在需要時，點亮他，看看自己收藏了多少情緒的保障吧', en: `A hundred days in. Hope this practice have become a small lamp in your life — one you can turn to whenever you need, to see how much you’ve collected.` },
+      200: { zh: '日子裡，總有些天像是滿月，有些日子像玄月，稍微暗了點，但沒事的，下一個滿月會到達的', en: `Some days feel like a full moon, bright and full. Others feel darker, quieter. That’s okay. The next full moon is always on its way.` },
+      365: { zh: '收集到的這天，我想誰都沒想過居然紀錄了一年份了啊！請為自己掌聲吧！', en: `A whole year. I don’t think either of us quite expected this. Take a moment — and give yourself a round of applause.` }
     };
     const svgIndex = msSvgMap[n];
     const title = isEn ? `Congrats! ${n} Days Coloured!` : `恭喜你，已經上色了 ${n} 天了！`;
@@ -3164,9 +3193,35 @@
     const flowerZH = flowerNamesZH[m-1] || '';
     const svgIndex = String(m + 1).padStart(2, '0');
     const title = `${monthName} ${y}`;
-    const msg = isEn
-      ? `You have coloured 90% of this month. Thank you for doing this for yourself.`
-      : `謝謝你，幫自己紀錄了90% 的日子在這個月！`;
+    const _flowerMsgZH = [
+      '在一年的最初，願這場覺察之旅，能成為你日子裡的一小束光，照亮著你',
+      '最冷的季節，最堅韌的花，願能夠為你的覺察之旅存下更多勇氣',
+      '春天的身影，總是藏在日子裡，願你發現了自己綻放著的每個美好瞬間',
+      '勇氣之花的月份，願你在這趟自我紀錄裡，發現了更多不同樣貌的自己',
+      '其實我們自己能夠成為自己的太陽，願你在這旅程裡遇見那樣的發現時刻',
+      '一年過了一半了！願你擁有了很多美好的瞬間，跟值得為自己感到開心的時刻',
+      '願你在日子裡，收羅了很多讓自己感到平靜的時刻，很多安心的瞬間',
+      '頑強的毅力，是孤挺花的花語。願你在日子裡，都勇敢選了做不違背心的選項',
+      '在需要的時候，看看那些困擾自己的煩惱，是不是需要被放下了～',
+      '紅了的山頭，像是訴說著日子總是有著變化，而我們也總會在那些變化裡，找到新的可能',
+      '準備收尾一年的月份裡，願你在這旅程裡，發現自己能夠為自己帶來的安定力量',
+      '無論這一年，經歷了什麼，讓我們在這時刻一起，更加溫柔的善待自己吧'
+    ];
+    const _flowerMsgEN = [
+      `At the very start of a new year, hope this journey of self-awareness become a small light in your days — one that gently illuminates who you are.`,
+      `The most resilient flower blooms in the coldest season. Wish this journey store up a little more courage for you in your daily.`,
+      `Spring has a way of hiding in ordinary days. Take a look, you might notice every quiet moment you’ve blossomed and loved.`,
+      `This flower means courage. Wish this practice of recording yourself reveal new facets of who you are.`,
+      `We can become our own sun. Hope this journey would bring you that discovery.`,
+      `Half a year has passed. Wish you have held many beautiful moments — and reasons to feel proud of yourself.`,
+      `Wish you had collected moments of calm — many small pockets of peace.`,
+      `Resilience is the language of this flower. Wish you find yourself choosing, again and again, what feels true to your heart.`,
+      `When the time feels right, take a look at what’s been weighing on you — and ask if it’s ready to be let go.`,
+      `The reddened hills seem to say that days are always changing. And in that change, there is always something new waiting to be found.`,
+      `As the year draws to a close, wish you discover the peace, steadying strength you’ve been carrying within yourself all along.`,
+      `Whatever this year has held — let’s take this moment, together, to be a little more gentle with ourselves.`
+    ];
+    const msg = isEn ? (_flowerMsgEN[m-1] || '') : (_flowerMsgZH[m-1] || '');
     const series = isEn ? `✦ ${y} Bloom Series: ${flowerEN} ✦` : `✦ ${y} 是花系列：${flowerZH} ✦`;
 
     const overlay = document.createElement('div');
