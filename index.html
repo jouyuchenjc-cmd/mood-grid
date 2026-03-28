@@ -911,7 +911,7 @@
   <header>
     <div>
       <h1>The Colour of Your Day.</h1>
-      <div class="subtitle" id="currentYear"></div>
+      <div class="subtitle" id="appTagline"></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;">
     <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -1111,7 +1111,8 @@
   const todayStr = formatDate(today);
 
   function initHeader() {
-    document.getElementById('currentYear').textContent = `${today.getFullYear()}`;
+    const _tagline = document.getElementById('appTagline');
+    if (_tagline) _tagline.textContent = currentLang === 'en' ? 'Scroll down, pick a colour, to record today.' : '滑到最底部，選一個顏色，來記錄今天的自己吧！';
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     document.getElementById('todayLabel').textContent =
       `${months[today.getMonth()]} ${String(today.getDate()).padStart(2,'0')}, ${today.getFullYear()}`;
@@ -1582,7 +1583,14 @@
       cell.textContent = d.getDate();
 
       if (!isFuture) {
-        cell.onclick = () => { if (dateStr !== todayStr) openModal(dateStr); };
+        cell.onclick = () => {
+          if (dateStr === todayStr) {
+            const card = document.querySelector('.checkin-card');
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            openModal(dateStr);
+          }
+        };
       }
 
       col.appendChild(cell);
@@ -1629,7 +1637,14 @@
         tip.className = 'cell-tooltip';
         tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : (mood ? '' : (typeof getLang==="function" ? getLang().clickToFill : ' 點擊補填'))}`;
         cell.appendChild(tip);
-        if (dateStr !== todayStr) cell.onclick = () => openModal(dateStr);
+        cell.onclick = () => {
+          if (dateStr === todayStr) {
+            const card = document.querySelector('.checkin-card');
+            if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            openModal(dateStr);
+          }
+        };
       }
 
       col.appendChild(lbl);
@@ -1710,9 +1725,14 @@
     tip.textContent = `${formatDisplay(dateStr)}${entry?.note ? ' · ' + entry.note.slice(0,20) : (mood ? '' : (typeof getLang==="function" ? getLang().clickToFill : ' 點擊補填'))}`;
     cell.appendChild(tip);
 
-    if (dateStr !== todayStr) {
-      cell.onclick = () => openModal(dateStr);
-    }
+    cell.onclick = () => {
+      if (dateStr === todayStr) {
+        const card = document.querySelector('.checkin-card');
+        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        openModal(dateStr);
+      }
+    };
     return cell;
   }
 
@@ -3203,6 +3223,8 @@
 
   function applyLang() {
     const L = getLang();
+    const _tg = document.getElementById('appTagline');
+    if (_tg) _tg.textContent = currentLang === 'en' ? 'Scroll down, pick a colour, to record today.' : '滑到最底部，選一個顏色，來記錄今天的自己吧！';
     // legend — 保留 dot，只換文字節點
     const legendItems = document.querySelectorAll('.legend-item');
     const legendKeys = ['happy','mixed','sad','neutral'];
