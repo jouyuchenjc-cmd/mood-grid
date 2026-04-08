@@ -1,4 +1,4 @@
-const CACHE_NAME = 'moodgrid-v6';
+const CACHE_NAME = 'moodgrid-v7';
 const ASSETS = [
   './',
   './index.html',
