@@ -994,7 +994,7 @@
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <button onclick="toggleLog()" id="logToggleBtn" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink);text-decoration:underline;text-underline-offset:3px;padding:0;">Your Recent Life Note</button>
       <div style="display:flex;align-items:center;gap:12px;">
-        <button onclick="exportData()" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;padding:0;text-decoration:underline;text-underline-offset:2px;">匯出</button>
+        <button onclick="exportDataAndEmail()" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;padding:0;text-decoration:underline;text-underline-offset:2px;"><span id="exportBtnLabel">匯出</span></button>
         <button onclick="importData()" style="background:none;border:none;cursor:pointer;font-family:Sulphur Point,sans-serif;font-size:11px;color:var(--ink-light);letter-spacing:0.06em;padding:0;text-decoration:underline;text-underline-offset:2px;">匯入</button>
         <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
         <span id="logToggleArrow" style="font-size:16px;color:var(--ink);font-weight:700;font-family:monospace;line-height:1;">−</span>
@@ -1080,6 +1080,8 @@
 
 <script>
   const STORAGE_KEY = 'mood_grid_data_v2';
+  const EXPORT_REMIND_KEY = 'moodLastExportDate';
+const EXPORT_REMIND_DAYS = 14;
   let moodData = {};
   let selectedMood = null;
   let modalMood = null;
@@ -1401,8 +1403,121 @@
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(a.href);
+    localStorage.setItem(EXPORT_REMIND_KEY, new Date().toISOString());
     showConfirm(`✅ 已匯出 ${count} 筆紀錄！`, null, null); document.getElementById('confirmCancel').style.display='none';
   }
+  function exportDataAndEmail() {
+  const count = Object.keys(moodData).length;
+  if (count === 0) {
+    showConfirm('還沒有任何紀錄可以寄出！', null, null);
+    document.getElementById('confirmCancel').style.display = 'none';
+    return;
+  }
+  // 先執行原本的下載
+  exportData();
+
+  // 整理信件內容
+  const d = new Date();
+  const dateStr = formatDate(d);
+  const subject = encodeURIComponent(`Colour my Day 備份 ${dateStr}`);
+  const totalDays = count;
+  const happyCount = Object.values(moodData).filter(v => v.mood === 'happy').length;
+  const sadCount = Object.values(moodData).filter(v => v.mood === 'sad').length;
+  const mixedCount = Object.values(moodData).filter(v => v.mood === 'mixed').length;
+  const neutralCount = Object.values(moodData).filter(v => v.mood === 'neutral').length;
+
+  const body = encodeURIComponent(
+`Colour my Day 資料備份
+備份日期：${dateStr}
+共 ${totalDays} 筆紀錄
+
+心情統計：
+開心 ${happyCount} 天
+各半 ${mixedCount} 天
+不開心 ${sadCount} 天
+沒感覺 ${neutralCount} 天
+
+---
+完整資料已隨附件下載（mood-data-${dateStr}.json）
+請將下載的檔案附加到這封信後寄給自己。`
+  );
+
+  setTimeout(() => {
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  }, 800);
+}
+  function checkExportReminder() {
+  const count = Object.keys(moodData).length;
+  if (count === 0) return;
+  const last = localStorage.getItem(EXPORT_REMIND_KEY);
+  if (!last) {
+    const isZh = currentLang === 'zh';
+showExportReminder(isZh
+  ? '你還沒有匯出過資料，建議備份一份以防資料遺失！'
+  : 'No backup found. Consider exporting your data!'
+);
+    return;
+  }
+  const daysSince = Math.floor((Date.now() - new Date(last).getTime()) / (1000 * 60 * 60 * 24));
+  if (daysSince >= EXPORT_REMIND_DAYS) {
+  const isZh = currentLang === 'zh';
+showExportReminder(isZh
+  ? `距離上次匯出已超過 ${daysSince} 天，建議備份一份！`
+  : `Last export was ${daysSince} days ago. Time for a backup!`
+);
+  }
+}
+
+function showExportReminder(msg) {
+  const banner = document.createElement('div');
+  banner.id = 'exportReminderBanner';
+  banner.style.cssText = `
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #4D586F;
+    color: #DCE5EF;
+    font-family: 'Sulphur Point', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    padding: 12px 20px;
+    border-radius: 30px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    max-width: 90vw;
+    text-align: center;
+  `;
+  banner.innerHTML = `
+    <span>⚠︎ ${msg}</span>
+    <button onclick="exportDataAndEmail(); document.getElementById('exportReminderBanner').remove();"" style="
+      padding: 6px 16px;
+     background: #ce7876;
+color: #ffffff;
+      border: none;
+      border-radius: 30px;
+      font-family: 'Sulphur Point', sans-serif;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      flex-shrink: 0;
+    ">立即匯出</button>
+    <button onclick="document.getElementById('exportReminderBanner').remove();" style="
+      background: transparent;
+      border: none;
+      color: #8E97A8;
+      font-size: 16px;
+      cursor: pointer;
+      padding: 0 4px;
+      flex-shrink: 0;
+    ">✕</button>
+  `;
+  document.body.appendChild(banner);
+  setTimeout(() => { if (document.getElementById('exportReminderBanner')) document.getElementById('exportReminderBanner').remove(); }, 12000);
+}
 
   function importData() {
     document.getElementById('importFile').click();
@@ -2911,13 +3026,16 @@
   
   // Splash screen fade out
   window.addEventListener('load', () => {
-    const splash = document.getElementById('splashScreen');
-    if (!splash) return;
+  const splash = document.getElementById('splashScreen');
+  if (!splash) return;
+  setTimeout(() => {
+    splash.style.opacity = '0';
     setTimeout(() => {
-      splash.style.opacity = '0';
-      setTimeout(() => { splash.style.display = 'none'; }, 500);
-    }, 1000);
-  });
+      splash.style.display = 'none';
+      checkExportReminder(); // ← 加這行
+    }, 500);
+  }, 1000);
+});
   </script>
 
   <script>
@@ -3338,11 +3456,14 @@
     // download btn
     const dlBtn = document.querySelector('[onclick="saveCardAsImage()"]');
     if (dlBtn) dlBtn.textContent = L.downloadCard;
+    const exportBtnLabel = document.getElementById('exportBtnLabel');
+if (exportBtnLabel) exportBtnLabel.textContent = currentLang === 'zh' ? '匯出' : 'Export';
     // lang toggle btn text
     const langBtn = document.getElementById('langToggleBtn');
     if (langBtn) langBtn.textContent = currentLang === 'zh' ? 'EN' : '中';
     // blessing cards
     BLESSING_CARDS = L.blessingCards;
+    
   }
 
   function toggleLang() {
